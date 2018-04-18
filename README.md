@@ -8,6 +8,10 @@ https://github.com/britzl/Platypus/archive/master.zip
 
 Or point to the ZIP file of a [specific release](https://github.com/britzl/Platypus/releases).
 
+# Example
+See an example of Platypus in action by running the `grottoescape.collection` of this project or try [the HTML5 demo](https://britzl.github.io/Platypus/).
+
+
 # Usage
 
 ## Creating an instance
@@ -241,3 +245,7 @@ Sent once when the game object detects ground contact
 
 ### platypus.WALL_CONTACT
 Sent once when the game object detects wall contact
+
+
+# Credits
+* Grotto Escape tiles - Ansimuz (https://ansimuz.itch.io/grotto-escape-game-art-pack)

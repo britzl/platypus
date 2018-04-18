@@ -1,0 +1,97 @@
+image: "/example/grottoescape/assets/images/enemies.png"
+tile_width: 16
+tile_height: 16
+tile_margin: 0
+tile_spacing: 0
+collision: "/example/grottoescape/assets/images/enemies.png"
+material_tag: "tile"
+convex_hulls {
+  index: 0
+  count: 8
+  collision_group: "enemy"
+}
+convex_hulls {
+  index: 8
+  count: 9
+  collision_group: "enemy"
+}
+convex_hulls {
+  index: 17
+  count: 8
+  collision_group: "enemy"
+}
+convex_hulls {
+  index: 25
+  count: 0
+  collision_group: ""
+}
+convex_hulls {
+  index: 25
+  count: 11
+  collision_group: "enemy"
+}
+convex_hulls {
+  index: 36
+  count: 11
+  collision_group: "enemy"
+}
+convex_hulls {
+  index: 47
+  count: 10
+  collision_group: "enemy"
+}
+convex_hulls {
+  index: 57
+  count: 11
+  collision_group: "enemy"
+}
+convex_hulls {
+  index: 68
+  count: 10
+  collision_group: "enemy"
+}
+convex_hulls {
+  index: 78
+  count: 11
+  collision_group: "enemy"
+}
+convex_hulls {
+  index: 89
+  count: 10
+  collision_group: "enemy"
+}
+convex_hulls {
+  index: 99
+  count: 0
+  collision_group: ""
+}
+collision_groups: "enemy"
+animations {
+  id: "bat"
+  start_tile: 9
+  end_tile: 11
+  playback: PLAYBACK_ONCE_FORWARD
+  fps: 10
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "dragon"
+  start_tile: 5
+  end_tile: 8
+  playback: PLAYBACK_ONCE_FORWARD
+  fps: 10
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+animations {
+  id: "slime"
+  start_tile: 1
+  end_tile: 3
+  playback: PLAYBACK_ONCE_FORWARD
+  fps: 10
+  flip_horizontal: 0
+  flip_vertical: 0
+}
+extrude_borders: 2
+inner_padding: 0

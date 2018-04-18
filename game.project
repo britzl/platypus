@@ -1,0 +1,45 @@
+[project]
+title = Platypus
+version = 0
+dependencies = https://github.com/britzl/defold-input/archive/0.9.zip,https://github.com/britzl/defold-orthographic/archive/2.2.5.zip
+
+[bootstrap]
+main_collection = /example/grottoescape/grottoescape.collectionc
+render = /orthographic/render/orthographic.renderc
+
+[input]
+game_binding = /in/bindings/all.input_bindingc
+gamepads = /in/gamepads/in.gamepadsc
+
+[display]
+width = 1280
+height = 720
+
+[physics]
+scale = 0.02
+debug = 0
+gravity_y = 0
+
+[script]
+shared_state = 1
+
+[library]
+include_dirs = platypus
+
+[graphics]
+max_debug_vertices = 50000
+default_texture_min_filter = nearest
+default_texture_mag_filter = nearest
+
+[collection_proxy]
+max_count = 16
+
+[ios]
+bundle_identifier = com.britzl.defold.platypus
+
+[android]
+package = com.britzl.defold.platypus
+
+[osx]
+bundle_identifier = com.britzl.defold.platypus
+

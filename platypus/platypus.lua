@@ -47,7 +47,7 @@ function M.create(config)
 
 	-- track current and previous state to detect state changes
 	local state = {
-		current = {},
+		current = { wall_contact = vmath.vector3(), ground_contact = vmath.vector3() },
 		previous = {},
 	}
 
@@ -70,12 +70,16 @@ function M.create(config)
 	local RAY_CAST_RIGHT_ID = 2
 	local RAY_CAST_DOWN_ID = 3
 	local RAY_CAST_UP_ID = 4
-
+	local RAY_CAST_DOWN_LEFT_ID = 5
+	local RAY_CAST_DOWN_RIGHT_ID = 6
+	
 	local RAY_CAST_LEFT = vmath.vector3(-config.collisions.left - 1, 0, 0)
 	local RAY_CAST_RIGHT = vmath.vector3(config.collisions.right + 1, 0, 0)
 	local RAY_CAST_DOWN = vmath.vector3(1, -config.collisions.bottom - 1, 0)
 	local RAY_CAST_UP = vmath.vector3(1, config.collisions.top + 1, 0)
-
+	local RAY_CAST_DOWN_LEFT = vmath.vector3(-config.collisions.left + 1, -config.collisions.bottom - 1, 0)
+	local RAY_CAST_DOWN_RIGHT = vmath.vector3(config.collisions.right - 1, -config.collisions.bottom - 1, 0)
+		
 
 	local function jumping_up()
 		return (platypus.velocity.y > 0 and platypus.gravity < 0) or (platypus.velocity.y < 0 and platypus.gravity > 0)
@@ -84,13 +88,17 @@ function M.create(config)
 	-- Move the game object left
 	-- @param velocity Horizontal velocity
 	function platypus.left(velocity)
-		movement.x = -velocity
+		if state.current.wall_contact ~= 1 then
+			movement.x = -velocity
+		end
 	end
 
 	--- Move the game object right
 	-- @param velocity Horizontal velocity
 	function platypus.right(velocity)
-		movement.x = velocity
+		if state.current.wall_contact ~= -1 then
+			movement.x = velocity
+		end
 	end
 
 	-- Move the game object up
@@ -124,8 +132,6 @@ function M.create(config)
 		elseif allow_double_jump and jumping_up() and not state.current.double_jumping then
 			platypus.velocity.y = platypus.velocity.y + power
 			state.current.double_jumping = true
-		else
-			print("no ground contact")
 		end
 	end
 
@@ -192,7 +198,9 @@ function M.create(config)
 				state.current.wall_contact = 1
 			elseif message.request_id == RAY_CAST_RIGHT_ID then
 				state.current.wall_contact = -1
-			elseif message.request_id == RAY_CAST_DOWN_ID then
+			elseif message.request_id == RAY_CAST_DOWN_ID
+			or message.request_id == RAY_CAST_DOWN_LEFT_ID 
+			or message.request_id == RAY_CAST_DOWN_RIGHT_ID then
 				state.current.ground_contact = true
 				state.current.double_jumping = false
 				msg.post(".", "set_parent", { parent_id = message.id })
@@ -253,11 +261,15 @@ function M.create(config)
 		local world_pos = go.get_world_position() + distance
 		physics.ray_cast(world_pos, world_pos + RAY_CAST_LEFT, config.collisions.ground, RAY_CAST_LEFT_ID)
 		physics.ray_cast(world_pos, world_pos + RAY_CAST_RIGHT, config.collisions.ground, RAY_CAST_RIGHT_ID)
-		physics.ray_cast(world_pos, world_pos + RAY_CAST_DOWN, config.collisions.ground, RAY_CAST_DOWN_ID)
 		physics.ray_cast(world_pos, world_pos + RAY_CAST_UP, config.collisions.ground, RAY_CAST_UP_ID)
+		physics.ray_cast(world_pos, world_pos + RAY_CAST_DOWN_LEFT, config.collisions.ground, RAY_CAST_DOWN_LEFT_ID)
+		physics.ray_cast(world_pos, world_pos + RAY_CAST_DOWN_RIGHT, config.collisions.ground, RAY_CAST_DOWN_RIGHT_ID)
+		--physics.ray_cast(world_pos, world_pos + RAY_CAST_DOWN, config.collisions.ground, RAY_CAST_DOWN_ID)
 		--msg.post("@render:", "draw_line", { start_point = world_pos, end_point = world_pos + RAY_CAST_LEFT, color = vmath.vector4(1)})
 		--msg.post("@render:", "draw_line", { start_point = world_pos, end_point = world_pos + RAY_CAST_RIGHT, color = vmath.vector4(1)})
 		--msg.post("@render:", "draw_line", { start_point = world_pos, end_point = world_pos + RAY_CAST_DOWN, color = vmath.vector4(1)})
+		--msg.post("@render:", "draw_line", { start_point = world_pos, end_point = world_pos + RAY_CAST_DOWN_LEFT, color = vmath.vector4(1)})
+		--msg.post("@render:", "draw_line", { start_point = world_pos, end_point = world_pos + RAY_CAST_DOWN_RIGHT, color = vmath.vector4(1)})
 		--msg.post("@render:", "draw_line", { start_point = world_pos, end_point = world_pos + RAY_CAST_UP, color = vmath.vector4(1)})
 	end
 

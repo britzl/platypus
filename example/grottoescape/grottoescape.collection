@@ -48,6 +48,11 @@ instances {
       value: "100.0, 0.0, 0.0"
       type: PROPERTY_TYPE_VECTOR3
     }
+    properties {
+      id: "duration"
+      value: "4.0"
+      type: PROPERTY_TYPE_NUMBER
+    }
   }
   scale3 {
     x: 1.0
@@ -59,7 +64,7 @@ instances {
   id: "player"
   prototype: "/example/grottoescape/player.go"
   position {
-    x: -82.0
+    x: -78.0
     y: -56.0
     z: 0.0
   }
@@ -120,6 +125,72 @@ instances {
       id: "follow_target"
       value: "/player"
       type: PROPERTY_TYPE_HASH
+    }
+  }
+  scale3 {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+}
+instances {
+  id: "moving_platform3"
+  prototype: "/example/grottoescape/moving_platform/moving_platform.go"
+  position {
+    x: 237.0
+    y: 245.0
+    z: 0.0
+  }
+  rotation {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+    w: 1.0
+  }
+  component_properties {
+    id: "script"
+    properties {
+      id: "direction"
+      value: "0.0, -100.0, 0.0"
+      type: PROPERTY_TYPE_VECTOR3
+    }
+    properties {
+      id: "duration"
+      value: "6.0"
+      type: PROPERTY_TYPE_NUMBER
+    }
+  }
+  scale3 {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+}
+instances {
+  id: "moving_platform4"
+  prototype: "/example/grottoescape/moving_platform/moving_platform.go"
+  position {
+    x: 142.0
+    y: 187.0
+    z: 0.0
+  }
+  rotation {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+    w: 1.0
+  }
+  component_properties {
+    id: "script"
+    properties {
+      id: "direction"
+      value: "-100.0, 0.0, 0.0"
+      type: PROPERTY_TYPE_VECTOR3
+    }
+    properties {
+      id: "duration"
+      value: "4.0"
+      type: PROPERTY_TYPE_NUMBER
     }
   }
   scale3 {

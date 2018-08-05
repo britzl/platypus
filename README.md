@@ -79,7 +79,7 @@ Platypus supports normal jumps when standing on the ground, wall jumps when in c
 	end
 
 ## Collision detection
-Platypus uses a combination of contact point response handling and ray casts. Contact point response handling is used to separate the game object from the colliding geometry and ray casts are used to detect wall and ground contact.
+Platypus uses ray casts to detect collisions. Ray casts are used for both separating the game object from the colliding geometry and to detect wall and ground contact.
 
 ## State changes
 Platypus will send messages for certain state changes so that scripts can react, for instance by changing animation.
@@ -117,6 +117,7 @@ Create an instance of Platypus. This will provide all the functionality to contr
 The ```config``` table can have the following values:
 
 * `collisions` (table) - Lists of collision groups (REQUIRED)
+* `debug` (boolean) - True to draw ray casts
 * `gravity` (number) - Gravity (pixels/s) (OPTIONAL)
 * `max_velocity` (number) - Maximum velocity of the game object (pixels/s). Set this to limit speed and prevent full penetration of game object into level geometry (OPTIONAL)
 * `wall_jump_power_ratio_x` (number) - Amount to multiply the jump power with when applying horizontal velocity during a wall jump (OPTIONAL)

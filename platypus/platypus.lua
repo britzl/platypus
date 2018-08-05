@@ -7,6 +7,8 @@ local POST_UPDATE = hash("platypus_post_update")
 local RAY_CAST_MISSED = hash("ray_cast_missed")
 local RAY_CAST_RESPONSE = hash("ray_cast_response")
 
+local RAY_COLOR = vmath.vector4(0.5, 0.9, 1, 1)
+
 local function clamp(v, min, max)
 	if v < min then
 		return min
@@ -47,8 +49,8 @@ function M.create(config)
 
 	-- track current and previous state to detect state changes
 	local state = {
-		current = { wall_contact = vmath.vector3(), ground_contact = vmath.vector3() },
-		previous = {},
+		current = { wall_contact = vmath.vector3(), ground_contact = vmath.vector3(), rays = {} },
+		previous = { rays = {} },
 	}
 
 	-- public instance
@@ -75,12 +77,33 @@ function M.create(config)
 	
 	local RAY_CAST_LEFT = vmath.vector3(-config.collisions.left - 1, 0, 0)
 	local RAY_CAST_RIGHT = vmath.vector3(config.collisions.right + 1, 0, 0)
-	local RAY_CAST_DOWN = vmath.vector3(1, -config.collisions.bottom - 1, 0)
-	local RAY_CAST_UP = vmath.vector3(1, config.collisions.top + 1, 0)
+	local RAY_CAST_DOWN = vmath.vector3(0, -config.collisions.bottom - 1, 0)
+	local RAY_CAST_UP = vmath.vector3(0, config.collisions.top + 1, 0)
 	local RAY_CAST_DOWN_LEFT = vmath.vector3(-config.collisions.left + 1, -config.collisions.bottom - 1, 0)
 	local RAY_CAST_DOWN_RIGHT = vmath.vector3(config.collisions.right - 1, -config.collisions.bottom - 1, 0)
-		
 
+	local RAYS = {
+		[RAY_CAST_LEFT_ID] = RAY_CAST_LEFT,
+		[RAY_CAST_RIGHT_ID] = RAY_CAST_RIGHT,
+		[RAY_CAST_DOWN_ID] = RAY_CAST_DOWN,
+		[RAY_CAST_UP_ID] = RAY_CAST_UP,
+		[RAY_CAST_DOWN_LEFT_ID] = RAY_CAST_DOWN_LEFT,
+		[RAY_CAST_DOWN_RIGHT_ID] = RAY_CAST_DOWN_RIGHT,
+	}
+
+	local function separate_ray(ray, fraction)
+		local pos = go.get_position() - ray * (1 - fraction)
+		pos.y = math.floor(pos.y)
+		go.set_position(pos)
+	end
+
+	local function ray_cast(id, from, to)
+		if config.debug then
+			msg.post("@render:", "draw_line", { start_point = from, end_point = to, color = RAY_COLOR } )
+		end
+		physics.ray_cast(from, to, config.collisions.ground, id)
+	end
+	
 	local function jumping_up()
 		return (platypus.velocity.y > 0 and platypus.gravity < 0) or (platypus.velocity.y < 0 and platypus.gravity > 0)
 	end
@@ -166,25 +189,12 @@ function M.create(config)
 	function platypus.has_wall_contact()
 		return state.current.wall_contact and state.previous.wall_contact
 	end
-
+	
 	--- Forward any on_message calls here to resolve physics collisions
 	-- @param message_id
 	-- @param message
 	function platypus.on_message(message_id, message)
-		if message_id == CONTACT_POINT_RESPONSE then
-			if collisions.ground[message.group] then
-				-- separate collision objects and adjust velocity
-				local proj = vmath.dot(correction, message.normal)
-				local comp = (message.distance - proj) * message.normal
-				correction = correction + comp
-				go.set_position(go.get_position() + comp)
-				proj = vmath.dot(platypus.velocity, message.normal)
-				if proj < 0 then
-					--platypus.velocity = platypus.velocity - (proj * message.normal)
-				end
-				platypus.normal = message.normal
-			end
-		elseif message_id == POST_UPDATE then
+		if message_id == POST_UPDATE then
 			-- reset transient state
 			correction = vmath.vector3()
 			movement.x = 0
@@ -194,23 +204,29 @@ function M.create(config)
 			state.current.wall_contact = false
 			state.current.falling = false
 		elseif message_id == RAY_CAST_RESPONSE then
+			state.current.rays[message.request_id] = true
 			if message.request_id == RAY_CAST_LEFT_ID then
 				state.current.wall_contact = 1
+				separate_ray(RAY_CAST_LEFT, message.fraction)
 			elseif message.request_id == RAY_CAST_RIGHT_ID then
 				state.current.wall_contact = -1
-			elseif message.request_id == RAY_CAST_DOWN_ID
-			or message.request_id == RAY_CAST_DOWN_LEFT_ID 
-			or message.request_id == RAY_CAST_DOWN_RIGHT_ID then
+				separate_ray(RAY_CAST_RIGHT, message.fraction)
+			elseif (message.request_id == RAY_CAST_DOWN_LEFT_ID or message.request_id == RAY_CAST_DOWN_RIGHT_ID)
+			and not state.current.ground_contact then
 				state.current.ground_contact = true
 				state.current.double_jumping = false
 				msg.post(".", "set_parent", { parent_id = message.id })
+				separate_ray(RAY_CAST_DOWN, message.fraction)
 			elseif message.request_id == RAY_CAST_UP_ID then
 				if platypus.velocity.y > 0 then
 					platypus.velocity.y = 0
 				end
+				separate_ray(RAY_CAST_UP, message.fraction)
 			end
 		elseif message_id == RAY_CAST_MISSED then
-			if message.request_id == RAY_CAST_DOWN_ID then
+			state.current.rays[message.request_id] = false
+			if not state.current.rays[RAY_CAST_DOWN_LEFT_ID] and
+			not state.current.rays[RAY_CAST_DOWN_RIGHT_ID] then
 				state.current.ground_contact = false
 				msg.post(".", "set_parent", { parent_id = nil })
 			end
@@ -259,18 +275,11 @@ function M.create(config)
 
 		-- ray cast left, right and down to detect level geometry
 		local world_pos = go.get_world_position() + distance
-		physics.ray_cast(world_pos, world_pos + RAY_CAST_LEFT, config.collisions.ground, RAY_CAST_LEFT_ID)
-		physics.ray_cast(world_pos, world_pos + RAY_CAST_RIGHT, config.collisions.ground, RAY_CAST_RIGHT_ID)
-		physics.ray_cast(world_pos, world_pos + RAY_CAST_UP, config.collisions.ground, RAY_CAST_UP_ID)
-		physics.ray_cast(world_pos, world_pos + RAY_CAST_DOWN_LEFT, config.collisions.ground, RAY_CAST_DOWN_LEFT_ID)
-		physics.ray_cast(world_pos, world_pos + RAY_CAST_DOWN_RIGHT, config.collisions.ground, RAY_CAST_DOWN_RIGHT_ID)
-		--physics.ray_cast(world_pos, world_pos + RAY_CAST_DOWN, config.collisions.ground, RAY_CAST_DOWN_ID)
-		--msg.post("@render:", "draw_line", { start_point = world_pos, end_point = world_pos + RAY_CAST_LEFT, color = vmath.vector4(1)})
-		--msg.post("@render:", "draw_line", { start_point = world_pos, end_point = world_pos + RAY_CAST_RIGHT, color = vmath.vector4(1)})
-		--msg.post("@render:", "draw_line", { start_point = world_pos, end_point = world_pos + RAY_CAST_DOWN, color = vmath.vector4(1)})
-		--msg.post("@render:", "draw_line", { start_point = world_pos, end_point = world_pos + RAY_CAST_DOWN_LEFT, color = vmath.vector4(1)})
-		--msg.post("@render:", "draw_line", { start_point = world_pos, end_point = world_pos + RAY_CAST_DOWN_RIGHT, color = vmath.vector4(1)})
-		--msg.post("@render:", "draw_line", { start_point = world_pos, end_point = world_pos + RAY_CAST_UP, color = vmath.vector4(1)})
+		ray_cast(RAY_CAST_LEFT_ID, world_pos, world_pos + RAY_CAST_LEFT)
+		ray_cast(RAY_CAST_RIGHT_ID, world_pos, world_pos + RAY_CAST_RIGHT)
+		ray_cast(RAY_CAST_UP_ID, world_pos, world_pos + RAY_CAST_UP)
+		ray_cast(RAY_CAST_DOWN_LEFT_ID, world_pos, world_pos + RAY_CAST_DOWN_LEFT)
+		ray_cast(RAY_CAST_DOWN_RIGHT_ID, world_pos, world_pos + RAY_CAST_DOWN_RIGHT)
 	end
 
 	return platypus

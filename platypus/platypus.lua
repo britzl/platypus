@@ -91,9 +91,9 @@ function M.create(config)
 		[RAY_CAST_DOWN_RIGHT_ID] = RAY_CAST_DOWN_RIGHT,
 	}
 
-	local function separate_ray(ray, fraction)
-		local pos = go.get_position() - ray * (1 - fraction)
-		pos.y = math.floor(pos.y)
+	local function separate_ray(ray, message)
+		local pos = go.get_position()
+		pos = pos - ray * (1 - message.fraction)
 		go.set_position(pos)
 	end
 
@@ -207,21 +207,21 @@ function M.create(config)
 			state.current.rays[message.request_id] = true
 			if message.request_id == RAY_CAST_LEFT_ID then
 				state.current.wall_contact = 1
-				separate_ray(RAY_CAST_LEFT, message.fraction)
+				separate_ray(RAY_CAST_LEFT, message)
 			elseif message.request_id == RAY_CAST_RIGHT_ID then
 				state.current.wall_contact = -1
-				separate_ray(RAY_CAST_RIGHT, message.fraction)
+				separate_ray(RAY_CAST_RIGHT, message)
 			elseif (message.request_id == RAY_CAST_DOWN_LEFT_ID or message.request_id == RAY_CAST_DOWN_RIGHT_ID)
 			and not state.current.ground_contact then
 				state.current.ground_contact = true
 				state.current.double_jumping = false
 				msg.post(".", "set_parent", { parent_id = message.id })
-				separate_ray(RAY_CAST_DOWN, message.fraction)
+				separate_ray(RAY_CAST_DOWN, message)
 			elseif message.request_id == RAY_CAST_UP_ID then
 				if platypus.velocity.y > 0 then
 					platypus.velocity.y = 0
 				end
-				separate_ray(RAY_CAST_UP, message.fraction)
+				separate_ray(RAY_CAST_UP, message)
 			end
 		elseif message_id == RAY_CAST_MISSED then
 			state.current.rays[message.request_id] = false

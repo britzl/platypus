@@ -21,7 +21,7 @@ function init(self)
 	self.platypus = platypus.create({
 		collisions = {
 			ground = { hash("ground") },
-			left = 6, right = 6, top = 6, bottom = 8,
+			left = 7, right = 7, top = 6, bottom = 8,
 		},
 		gravity = -800,
 		max_velocity = 600

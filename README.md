@@ -117,6 +117,7 @@ Create an instance of Platypus. This will provide all the functionality to contr
 The ```config``` table can have the following values:
 
 * `collisions` (table) - Lists of collision groups (REQUIRED)
+* `separation` (hash) - How to do collision separation. Use platypus.SEPARATION_SHAPES to separate using collision shapes and platypus.SEPARATION_RAYS to separate using ray casts. Default: platypus.SEPARATION_SHAPES
 * `debug` (boolean) - True to draw ray casts
 * `gravity` (number) - Gravity (pixels/s) (OPTIONAL)
 * `max_velocity` (number) - Maximum velocity of the game object (pixels/s). Set this to limit speed and prevent full penetration of game object into level geometry (OPTIONAL)
@@ -236,6 +237,10 @@ Check if the game object is jumping. The game object is considered falling if no
 * `jumping` (boolean) - True if jumping
 
 
+### instance.togge_debug()
+Toggle debug draw of ray casts.
+
+
 ## Messages
 
 ### platypus.FALLING
@@ -246,6 +251,15 @@ Sent once when the game object detects ground contact
 
 ### platypus.WALL_CONTACT
 Sent once when the game object detects wall contact
+
+
+## Constants
+
+### platypus.SEPARATION_SHAPES
+Configuration value to indicate that collision separation should be done using collision shapes.
+
+### platypus.SEPARATION_RAYS
+Configuration value to indicate that collision separation should be done using ray casts.
 
 
 # Credits

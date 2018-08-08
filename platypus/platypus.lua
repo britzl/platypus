@@ -24,6 +24,9 @@ M.FALLING = hash("platypus_falling")
 M.GROUND_CONTACT = hash("platypus_ground_contact")
 M.WALL_CONTACT = hash("platypus_wall_contact")
 
+M.SEPARATION_RAYS = hash("separation_rays")
+M.SEPARATION_SHAPES = hash("separation_shapes")
+
 --- Create a platypus instance.
 -- This will provide all the functionality to control a game object in a
 -- platformer game. The functions will operate on the game object attached
@@ -39,6 +42,10 @@ function M.create(config)
 	assert(config.collisions.top, "You must provide distance to top edge of collision shape")
 	assert(config.collisions.bottom, "You must provide distance to bottom edge of collision shape")
 
+	config.separation = config.separation or M.SEPARATION_SHAPES
+	
+	local correction = vmath.vector3()
+	
 	-- get collision group lists and convert to sets
 	local collisions = {
 		ground = {}
@@ -49,7 +56,7 @@ function M.create(config)
 
 	-- track current and previous state to detect state changes
 	local state = {
-		current = { wall_contact = vmath.vector3(), ground_contact = vmath.vector3(), rays = {} },
+		current = { wall_contact = vmath.vector3(), ground_contact = false, rays = {} },
 		previous = { rays = {} },
 	}
 
@@ -61,9 +68,6 @@ function M.create(config)
 		wall_jump_power_ratio_y = config.wall_jump_power_ratio_y or 0.75,
 		wall_jump_power_ratio_x = config.wall_jump_power_ratio_x or 0.35,
 	}
-
-	-- for geometry separation during collisions
-	local correction = vmath.vector3()
 
 	-- movement based on user input
 	local movement = vmath.vector3()
@@ -92,9 +96,38 @@ function M.create(config)
 	}
 
 	local function separate_ray(ray, message)
-		local pos = go.get_position()
-		pos = pos - ray * (1 - message.fraction)
-		go.set_position(pos)
+		if config.separation == M.SEPARATION_RAYS then
+			local pos = go.get_position()
+			local separation
+			if message.request_id == RAY_CAST_LEFT_ID then
+				separation = ray * (1 - message.fraction)
+			elseif message.request_id == RAY_CAST_RIGHT_ID then
+				separation = ray * (1 - message.fraction)
+			elseif (message.request_id == RAY_CAST_DOWN_LEFT_ID or message.request_id == RAY_CAST_DOWN_RIGHT_ID) then
+				separation = ray * (1 - message.fraction)
+				separation.x = 0
+				--separation.y = math.ceil(separation.y)
+				pos.y = math.floor(pos.y)
+			elseif message.request_id == RAY_CAST_UP_ID then
+				separation = ray * (1 - message.fraction)
+			end
+			pos = pos - separation
+			go.set_position(pos)
+		end
+	end
+	
+	local function separate_collision(message)
+		if config.separation == M.SEPARATION_SHAPES and collisions.ground[message.group] then
+			-- separate collision objects and adjust velocity	
+			local proj = vmath.dot(correction, message.normal)	
+			local comp = (message.distance - proj) * message.normal	
+			correction = correction + comp	
+			go.set_position(go.get_position() + comp)	
+			proj = vmath.dot(platypus.velocity, message.normal)	
+			if proj < 0 then	
+				platypus.velocity = platypus.velocity - (proj * message.normal)	
+			end	
+		end	
 	end
 
 	local function ray_cast(id, from, to)
@@ -196,15 +229,16 @@ function M.create(config)
 	function platypus.on_message(message_id, message)
 		if message_id == POST_UPDATE then
 			-- reset transient state
-			correction = vmath.vector3()
 			movement.x = 0
 			movement.y = 0
+			correction = vmath.vector3()
 			state.previous, state.current = state.current, state.previous
-			state.current.ground_contact = false
 			state.current.wall_contact = false
 			state.current.falling = false
+		elseif message_id == CONTACT_POINT_RESPONSE then
+			separate_collision(message)
 		elseif message_id == RAY_CAST_RESPONSE then
-			state.current.rays[message.request_id] = true
+			state.current.rays[message.request_id] = message
 			if message.request_id == RAY_CAST_LEFT_ID then
 				state.current.wall_contact = 1
 				separate_ray(RAY_CAST_LEFT, message)
@@ -216,7 +250,7 @@ function M.create(config)
 				state.current.ground_contact = true
 				state.current.double_jumping = false
 				msg.post(".", "set_parent", { parent_id = message.id })
-				separate_ray(RAY_CAST_DOWN, message)
+				separate_ray(RAYS[message.request_id], message)
 			elseif message.request_id == RAY_CAST_UP_ID then
 				if platypus.velocity.y > 0 then
 					platypus.velocity.y = 0
@@ -224,9 +258,14 @@ function M.create(config)
 				separate_ray(RAY_CAST_UP, message)
 			end
 		elseif message_id == RAY_CAST_MISSED then
-			state.current.rays[message.request_id] = false
+			state.current.rays[message.request_id] = nil
+			-- if neither down left or down right hit anything this or
+			-- the last frame then we don't have ground contact anymore
 			if not state.current.rays[RAY_CAST_DOWN_LEFT_ID] and
-			not state.current.rays[RAY_CAST_DOWN_RIGHT_ID] then
+			not state.current.rays[RAY_CAST_DOWN_RIGHT_ID] and
+			not state.previous.rays[RAY_CAST_DOWN_LEFT_ID] and
+			not state.previous.rays[RAY_CAST_DOWN_RIGHT_ID]
+			then
 				state.current.ground_contact = false
 				msg.post(".", "set_parent", { parent_id = nil })
 			end
@@ -260,7 +299,7 @@ function M.create(config)
 		end
 
 		-- set and notify falling state
-		if not state.current.ground_contact and platypus.velocity.y < 0 then
+		if not state.current.ground_contact and not state.previous.ground_contact and platypus.velocity.y < 0 then
 			state.current.falling = true
 		end
 		if state.current.falling and not state.previous.falling then

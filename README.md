@@ -79,7 +79,7 @@ Platypus supports normal jumps when standing on the ground, wall jumps when in c
 	end
 
 ## Collision detection
-Platypus uses ray casts to detect collisions. Ray casts are used for both separating the game object from the colliding geometry and to detect wall and ground contact.
+Platypus uses either collision shapes or ray casts to detect collisions (configured when creating a Platypus instance). In both cases ray casts are used to detect wall and ground contact.
 
 ## State changes
 Platypus will send messages for certain state changes so that scripts can react, for instance by changing animation.
@@ -116,7 +116,7 @@ Create an instance of Platypus. This will provide all the functionality to contr
 
 The ```config``` table can have the following values:
 
-* `collisions` (table) - Lists of collision groups (REQUIRED)
+* `collisions` (table) - Lists of collision groups and bounding box size (REQUIRED)
 * `separation` (hash) - How to do collision separation. Use platypus.SEPARATION_SHAPES to separate using collision shapes and platypus.SEPARATION_RAYS to separate using ray casts. Default: platypus.SEPARATION_SHAPES
 * `debug` (boolean) - True to draw ray casts
 * `gravity` (number) - Gravity (pixels/s) (OPTIONAL)
@@ -126,11 +126,11 @@ The ```config``` table can have the following values:
 
 The `collisions` table can have the following values:
 
-* `ground` (table) - List with collision group hashes for collision objects representing ground
-* `left` (number) - Distance from game object center to left edge of collision shape
-* `right` (number) - Distance from game object center to right edge of collision shape
-* `top` (number) - Distance from game object center to top edge of collision shape
-* `bottom` (number) - Distance from game object center to bottom edge of collision shape
+* `ground` (table) - List with collision group hashes for collision objects representing ground. Used when separating collisions using collision shapes.
+* `left` (number) - Distance from game object center to left edge of collision shape. Used by ray casts to detect ground and wall contact.
+* `right` (number) - Distance from game object center to right edge of collision shape. Used by ray casts to detect ground and wall contact.
+* `top` (number) - Distance from game object center to top edge of collision shape. Used by ray casts to detect ground and wall contact.
+* `bottom` (number) - Distance from game object center to bottom edge of collision shape. Used by ray casts to detect ground and wall contact.
 
 **RETURN**
 * `instance` (table) - The created Platypus instance
@@ -210,7 +210,7 @@ Abort a jump by "cutting it short". This will reduce the vertical speed by some 
 
 
 ### instance.has_ground_contact()
-Check if the game object is tanding on the ground
+Check if the game object is standing on the ground
 
 **RETURN**
 * `ground_contact` (boolean) - True if standing on the ground
@@ -237,7 +237,7 @@ Check if the game object is jumping. The game object is considered falling if no
 * `jumping` (boolean) - True if jumping
 
 
-### instance.togge_debug()
+### instance.toggle_debug()
 Toggle debug draw of ray casts.
 
 

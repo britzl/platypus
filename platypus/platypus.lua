@@ -282,6 +282,11 @@ function M.create(config)
 		ray_cast(RAY_CAST_DOWN_RIGHT_ID, world_pos, world_pos + RAY_CAST_DOWN_RIGHT)
 	end
 
+
+	function platypus.toggle_debug()
+		config.debug = not config.debug
+	end
+
 	return platypus
 end
 

@@ -19,6 +19,7 @@ local function clamp(v, min, max)
 	end
 end
 
+local VECTOR3_ZERO = vmath.vector3()
 
 M.FALLING = hash("platypus_falling")
 M.GROUND_CONTACT = hash("platypus_ground_contact")
@@ -63,6 +64,7 @@ function M.create(config)
 	-- public instance
 	local platypus = {
 		velocity = vmath.vector3(),
+		force = vmath.vector3(),
 		gravity = config.gravity or -100,
 		max_velocity = config.max_velocity,
 		wall_jump_power_ratio_y = config.wall_jump_power_ratio_y or 0.75,
@@ -106,7 +108,7 @@ function M.create(config)
 			elseif (message.request_id == RAY_CAST_DOWN_LEFT_ID or message.request_id == RAY_CAST_DOWN_RIGHT_ID) then
 				separation = ray * (1 - message.fraction)
 				separation.x = 0
-				--separation.y = math.ceil(separation.y)
+				separation.y = math.ceil(separation.y)
 				pos.y = math.floor(pos.y)
 			elseif message.request_id == RAY_CAST_UP_ID then
 				separation = ray * (1 - message.fraction)
@@ -118,14 +120,16 @@ function M.create(config)
 	
 	local function separate_collision(message)
 		if config.separation == M.SEPARATION_SHAPES and collisions.ground[message.group] then
-			-- separate collision objects and adjust velocity	
+			-- separate collision objects
 			local proj = vmath.dot(correction, message.normal)	
 			local comp = (message.distance - proj) * message.normal	
 			correction = correction + comp	
-			go.set_position(go.get_position() + comp)	
-			proj = vmath.dot(platypus.velocity, message.normal)	
-			if proj < 0 then	
-				platypus.velocity = platypus.velocity - (proj * message.normal)	
+			go.set_position(go.get_position() + comp)
+
+			-- adjust velocity
+			local velocity_proj = vmath.dot(platypus.velocity, message.normal)	
+			if velocity_proj < 0 then	
+				platypus.velocity = platypus.velocity - (velocity_proj * message.normal)	
 			end	
 		end	
 	end
@@ -173,6 +177,15 @@ function M.create(config)
 	-- @param velocity Velocity as a vector3
 	function platypus.move(velocity)
 		movement = velocity
+		movement.z = 0
+	end
+
+	function platypus.apply_force(force)
+		platypus.force = platypus.force + force
+	end
+
+	function platypus.push(force)
+		platypus.force.x = platypus.force.x + force
 	end
 
 	--- Try to make the game object jump.
@@ -241,19 +254,31 @@ function M.create(config)
 			state.current.rays[message.request_id] = message
 			if message.request_id == RAY_CAST_LEFT_ID then
 				state.current.wall_contact = 1
+				if platypus.force.x < 0 then
+					platypus.force.x = 0
+				end
 				separate_ray(RAY_CAST_LEFT, message)
 			elseif message.request_id == RAY_CAST_RIGHT_ID then
 				state.current.wall_contact = -1
+				if platypus.force.x > 0 then
+					platypus.force.x = 0
+				end
 				separate_ray(RAY_CAST_RIGHT, message)
 			elseif (message.request_id == RAY_CAST_DOWN_LEFT_ID or message.request_id == RAY_CAST_DOWN_RIGHT_ID)
 			and not state.current.ground_contact then
 				state.current.ground_contact = true
 				state.current.double_jumping = false
+				if platypus.force.y < 0 then
+					platypus.force.y = 0
+				end
 				msg.post(".", "set_parent", { parent_id = message.id })
 				separate_ray(RAYS[message.request_id], message)
 			elseif message.request_id == RAY_CAST_UP_ID then
 				if platypus.velocity.y > 0 then
 					platypus.velocity.y = 0
+				end
+				if platypus.force.y > 0 then
+					platypus.force.y = 0
 				end
 				separate_ray(RAY_CAST_UP, message)
 			end
@@ -280,6 +305,7 @@ function M.create(config)
 			msg.post("#", M.GROUND_CONTACT)
 			platypus.velocity.x = 0
 			platypus.velocity.y = 0
+			platypus.force.x = 0
 		end
 
 		-- notify wall contact state change
@@ -291,12 +317,16 @@ function M.create(config)
 		if not state.current.ground_contact then
 			platypus.velocity.y = platypus.velocity.y + platypus.gravity * dt
 		end
-
-		-- update and clamp velocity
-		if platypus.max_velocity then
-			platypus.velocity.x = clamp(platypus.velocity.x, -platypus.max_velocity, platypus.max_velocity)
-			platypus.velocity.y = clamp(platypus.velocity.y, -platypus.max_velocity, platypus.max_velocity)
+		-- apply friction to force if standing on the ground
+		if state.current.ground_contact then
+			platypus.force.x = vmath.lerp(0.5, platypus.force.x, 0)
 		end
+					
+
+		platypus.velocity = platypus.velocity + platypus.force * dt
+
+		platypus.force = vmath.lerp(0.1, platypus.force, VECTOR3_ZERO)
+		print(platypus.force, platypus.velocity)
 
 		-- set and notify falling state
 		if not state.current.ground_contact and not state.previous.ground_contact and platypus.velocity.y < 0 then
@@ -306,14 +336,18 @@ function M.create(config)
 			msg.post("#", M.FALLING)
 		end
 
-		-- move the game object
-		local distance = (platypus.velocity * dt) + (movement * dt)
-		go.set_position(go.get_position() + distance)
+		-- move the game object, clamp distance to max velocity
+		local distance = platypus.velocity + movement
+		if platypus.max_velocity then
+			distance.x = clamp(distance.x, -platypus.max_velocity, platypus.max_velocity)
+			distance.y = clamp(distance.y, -platypus.max_velocity, platypus.max_velocity)
+		end
+		go.set_position(go.get_position() + distance * dt)
 
 		msg.post("#", POST_UPDATE)
 
-		-- ray cast left, right and down to detect level geometry
-		local world_pos = go.get_world_position() + distance
+		-- ray to detect level geometry
+		local world_pos = go.get_world_position() + distance * dt
 		ray_cast(RAY_CAST_LEFT_ID, world_pos, world_pos + RAY_CAST_LEFT)
 		ray_cast(RAY_CAST_RIGHT_ID, world_pos, world_pos + RAY_CAST_RIGHT)
 		ray_cast(RAY_CAST_UP_ID, world_pos, world_pos + RAY_CAST_UP)

@@ -1,0 +1,19 @@
+function init(self)
+	self.time_until_destroyed = 2
+end
+
+function update(self, dt)
+	if self.player_id then
+		self.time_until_destroyed = self.time_until_destroyed - dt
+		if self.time_until_destroyed <= 0 then
+			go.delete()
+		end
+		self.player_id = nil
+	end
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("collision_response") and message.other_group == hash("player") then
+		self.player_id = message.other_id
+	end
+end

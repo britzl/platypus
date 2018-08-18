@@ -64,8 +64,8 @@ instances {
   id: "player"
   prototype: "/example/grottoescape/player.go"
   position {
-    x: -78.0
-    y: -56.0
+    x: 44.0
+    y: 104.0
     z: 0.0
   }
   rotation {
@@ -192,6 +192,26 @@ instances {
       value: "4.0"
       type: PROPERTY_TYPE_NUMBER
     }
+  }
+  scale3 {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+}
+instances {
+  id: "destructing_platform"
+  prototype: "/example/grottoescape/destructing_platform/destructing_platform.go"
+  position {
+    x: 16.0
+    y: 57.0
+    z: 0.0
+  }
+  rotation {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+    w: 1.0
   }
   scale3 {
     x: 1.0

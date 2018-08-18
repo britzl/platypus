@@ -87,6 +87,9 @@ function M.create(config)
 	for _,h in ipairs(platypus.collisions.ground) do
 		ground[h] = true
 	end
+
+	-- id of the ground that this instance is parented to
+	local ground_id = nil
 	
 	-- collision shape correction vector
 	local correction = vmath.vector3()
@@ -292,6 +295,7 @@ function M.create(config)
 				state.current.ground_contact = true
 				state.current.double_jumping = false
 				msg.post(".", "set_parent", { parent_id = message.id })
+				ground_id = message.id
 				separate_ray(RAYS[message.request_id], message)
 			elseif message.request_id == RAY_CAST_UP_ID then
 				if platypus.velocity.y > 0 then
@@ -309,6 +313,7 @@ function M.create(config)
 			not state.previous.rays[RAY_CAST_DOWN_RIGHT_ID]
 			then
 				state.current.ground_contact = false
+				ground_id = nil
 				msg.post(".", "set_parent", { parent_id = nil })
 			end
 		end
@@ -318,6 +323,17 @@ function M.create(config)
 	-- @param dt
 	function platypus.update(dt)
 		assert(dt, "You must provide a delta time")
+
+		-- was the ground we're standing on removed?
+		if ground_id then
+			local ok, err = pcall(go.get_position, ground_id)
+			if not ok then
+				ground_id = nil
+				state.current.ground_contact = false
+				go.set_position(go.get_position() + state.current.world_position - state.current.position)
+			end
+		end
+
 		-- notify ground or air state change
 		if state.current.ground_contact and not state.previous.ground_contact then
 			msg.post("#", M.GROUND_CONTACT)
@@ -351,17 +367,21 @@ function M.create(config)
 
 		-- move the game object
 		local distance = (platypus.velocity * dt) + (movement * dt)
-		go.set_position(go.get_position() + distance)
+		local position = go.get_position()
+		local world_position = go.get_world_position()
+		state.current.position = position
+		state.current.world_position = world_position
+		go.set_position(position + distance)
 
 		msg.post("#", POST_UPDATE)
 
 		-- ray cast left, right and down to detect level geometry
-		local world_pos = go.get_world_position() + distance
-		ray_cast(RAY_CAST_LEFT_ID, world_pos, world_pos + RAY_CAST_LEFT)
-		ray_cast(RAY_CAST_RIGHT_ID, world_pos, world_pos + RAY_CAST_RIGHT)
-		ray_cast(RAY_CAST_UP_ID, world_pos, world_pos + RAY_CAST_UP)
-		ray_cast(RAY_CAST_DOWN_LEFT_ID, world_pos, world_pos + RAY_CAST_DOWN_LEFT)
-		ray_cast(RAY_CAST_DOWN_RIGHT_ID, world_pos, world_pos + RAY_CAST_DOWN_RIGHT)
+		local raycast_origin = world_position + distance
+		ray_cast(RAY_CAST_LEFT_ID, raycast_origin, raycast_origin + RAY_CAST_LEFT)
+		ray_cast(RAY_CAST_RIGHT_ID, raycast_origin, raycast_origin + RAY_CAST_RIGHT)
+		ray_cast(RAY_CAST_UP_ID, raycast_origin, raycast_origin + RAY_CAST_UP)
+		ray_cast(RAY_CAST_DOWN_LEFT_ID, raycast_origin, raycast_origin + RAY_CAST_DOWN_LEFT)
+		ray_cast(RAY_CAST_DOWN_RIGHT_ID, raycast_origin, raycast_origin + RAY_CAST_DOWN_RIGHT)
 	end
 
 

@@ -54,7 +54,9 @@ Use `platypus.left()`, `platypus.right()`, `platypus.up()`, `platypus.down()` an
 	end
 
 ## Jumping
-Platypus supports normal jumps when standing on the ground, wall jumps when in contact with a wall in the air and double jumps. Use `platypus.jump()` to perform a jump and `platypus.abort_jump()` to reduce the height of a jump that is already in progress.
+Platypus supports normal jumps when standing on the ground, wall jumps when in contact with a wall in the air and double jumps. You can also perform a "forced" jump that will perform a jump regardless of state. This can be useful when implementing rope mechanics and other such functions where there is no ground or wall contact.
+
+Use `platypus.jump()` to perform a jump and `platypus.abort_jump()` to reduce the height of a jump that is already in progress.
 
 	function init(self)
 		self.platypus = platypus.create(config)
@@ -100,6 +102,12 @@ Platypus will send messages for certain state changes so that scripts can react,
 			print("Phew! Solid ground")
 		elseif message_id == platypus.WALL_CONTACT then
 			print("Ouch!")
+		elseif message_id == platypus.WALL_JUMP then
+			print("Doing a wall jump!")
+		elseif message_id == platypus.DOUBLE_JUMP then
+			print("Doing a double jump!")
+		elseif message_id == platypus.JUMP then
+			print("Jumping!")
 		end
 	end
 
@@ -117,30 +125,31 @@ Create an instance of Platypus. This will provide all the functionality to contr
 The ```config``` table can have the following values:
 
 * `collisions` (table) - Lists of collision groups and bounding box size (REQUIRED)
-* `separation` (hash) - How to do collision separation. Use platypus.SEPARATION_SHAPES to separate using collision shapes and platypus.SEPARATION_RAYS to separate using ray casts. Default: platypus.SEPARATION_SHAPES
 * `debug` (boolean) - True to draw ray casts
 * `gravity` (number) - Gravity (pixels/s) (OPTIONAL)
 * `max_velocity` (number) - Maximum velocity of the game object (pixels/s). Set this to limit speed and prevent full penetration of game object into level geometry (OPTIONAL)
 * `wall_jump_power_ratio_x` (number) - Amount to multiply the jump power with when applying horizontal velocity during a wall jump (OPTIONAL)
 * `wall_jump_power_ratio_y` (number) - Amount to multiply the jump power with when applying vertical velocity during a wall jump (OPTIONAL)
+* `allow_double_jump` (boolean) - If double jumps are allowed
+* `allow_wall_jump` (boolean) - If wall jumps are allowed
 
 The `collisions` table can have the following values:
 
+* `separation` (hash) - How to do collision separation. Use platypus.SEPARATION_SHAPES to separate using collision shapes and platypus.SEPARATION_RAYS to separate using ray casts. Default: platypus.SEPARATION_SHAPES
 * `ground` (table) - List with collision group hashes for collision objects representing ground. Used when separating collisions using collision shapes.
-* `left` (number) - Distance from game object center to left edge of collision shape. Used by ray casts to detect ground and wall contact.
-* `right` (number) - Distance from game object center to right edge of collision shape. Used by ray casts to detect ground and wall contact.
-* `top` (number) - Distance from game object center to top edge of collision shape. Used by ray casts to detect ground and wall contact.
-* `bottom` (number) - Distance from game object center to bottom edge of collision shape. Used by ray casts to detect ground and wall contact.
+* `left` (number) - Distance from game object center to left edge of collision shape. Used by ray casts to detect ground and wall contact and when separating collisions using rays.
+* `right` (number) - Distance from game object center to right edge of collision shape. Used by ray casts to detect ground and wall contact and when separating collisions using rays.
+* `top` (number) - Distance from game object center to top edge of collision shape. Used by ray casts to detect ground and wall contact and when separating collisions using rays.
+* `bottom` (number) - Distance from game object center to bottom edge of collision shape. Used by ray casts to detect ground and wall contact and when separating collisions using rays.
 
 **RETURN**
 * `instance` (table) - The created Platypus instance
 
-The `instance` table has all of the instance functions describe below in addition to the following fields:
+The `instance` table has all of the instance functions describe below in addition to the values from `config` (either provided values or defaults) and the following fields:
 
-* `wall_jump_power_ratio_x` - Value copied from `config` or assigned a default value
-* `wall_jump_power_ratio_y` - Value copied from `config` or assigned a default value
-* `gravity` - Value copied from `config` or assigned a default value
 * `velocity` - The current velocity of the game object
+
+You can modify any of the instance values at runtime to change the behavior of the platypus instance.
 
 
 ### instance.update(dt)
@@ -193,14 +202,17 @@ Move the game object during next update. This will override any previous call to
 * `velocity` (vector3) - Amount to move (pixels/s)
 
 
-### instance.jump(power, allow_double_jump, allow_wall_jump)
-Make the game object perform a jump. This can either be a normal jump from standing on the ground, a wall jump if having wall contact and no ground contact, or a double jump if jumping up and not falling down.
+### instance.jump(power)
+Make the game object perform a jump. Depending on state and configuration, this can either be a normal jump from standing on the ground, a wall jump if having wall contact and no ground contact, or a double jump if jumping up and not falling down.
 
 **PARAMETERS**
 * `power` (number) - Initial takeoff speed (pixels/s)
-* `allow_double_jump` (boolean) - True if double jump is allowed
-* `allow_wall_jump` (boolean) - True if wall jump is allowed
 
+### instance.force_jump(power)
+Make the game object perform a jump, regardless of current state.
+
+**PARAMETERS**
+* `power` (number) - Initial takeoff speed (pixels/s)
 
 ### instance.abort_jump(reduction)
 Abort a jump by "cutting it short". This will reduce the vertical speed by some fraction.
@@ -251,6 +263,15 @@ Sent once when the game object detects ground contact
 
 ### platypus.WALL_CONTACT
 Sent once when the game object detects wall contact
+
+### platypus.JUMP
+Sent when the game object jumps
+
+### platypus.WALL_JUMP
+Sent when the game object performs a wall jump
+
+### platypus.DOUBLE_JUMP
+Sent when the game object performs a double jump
 
 
 ## Constants

@@ -23,6 +23,9 @@ end
 M.FALLING = hash("platypus_falling")
 M.GROUND_CONTACT = hash("platypus_ground_contact")
 M.WALL_CONTACT = hash("platypus_wall_contact")
+M.WALL_JUMP = hash("platypus_wall_jump")
+M.DOUBLE_JUMP = hash("platypus_double_jump")
+M.JUMP = hash("platypus_jump")
 
 M.SEPARATION_RAYS = hash("separation_rays")
 M.SEPARATION_SHAPES = hash("separation_shapes")
@@ -67,6 +70,8 @@ function M.create(config)
 		max_velocity = config.max_velocity,
 		wall_jump_power_ratio_y = config.wall_jump_power_ratio_y or 0.75,
 		wall_jump_power_ratio_x = config.wall_jump_power_ratio_x or 0.35,
+		allow_double_jump = config.allow_double_jump or false,
+		allow_wall_jump = config.allow_wall_jump or false,
 	}
 
 	-- movement based on user input
@@ -177,18 +182,28 @@ function M.create(config)
 
 	--- Try to make the game object jump.
 	-- @param power The power of the jump (ie how high)
-	-- @param allow_double_jump True if double-jump should be allowed
-	-- @param allow_wall_jump True if wall-jump should be allowed
-	function platypus.jump(power, allow_double_jump, allow_wall_jump)
+	function platypus.jump(power)
 		if state.current.ground_contact then
 			platypus.velocity.y = power
-		elseif state.current.wall_contact and allow_wall_jump then
+			msg.post("#", M.JUMP)
+		elseif state.current.wall_contact and platypus.allow_wall_jump then
 			platypus.velocity.y = power * platypus.wall_jump_power_ratio_y
 			platypus.velocity.x = state.current.wall_contact * power * platypus.wall_jump_power_ratio_x
-		elseif allow_double_jump and jumping_up() and not state.current.double_jumping then
+			msg.post("#", M.WALL_JUMP)
+		elseif platypus.allow_double_jump and jumping_up() and not state.current.double_jumping then
 			platypus.velocity.y = platypus.velocity.y + power
 			state.current.double_jumping = true
+			msg.post("#", M.DOUBLE_JUMP)
 		end
+	end
+
+	--- Make the game object jump, regardless of state
+	-- Useful when creating rope mechanics or other functionality that requires a jump without
+	-- ground or wall contact
+	function platypus.force_jump(power)
+		assert(power, "You must provide a jump takeoff power")
+		platypus.velocity.y = power
+		msg.post("#", M.JUMP)
 	end
 
 	--- Abort a jump by "cutting it short"

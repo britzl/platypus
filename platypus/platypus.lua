@@ -128,10 +128,6 @@ function M.create(config)
 			local comp = (message.distance - proj) * message.normal	
 			correction = correction + comp	
 			go.set_position(go.get_position() + comp)	
-			proj = vmath.dot(platypus.velocity, message.normal)	
-			if proj < 0 then	
-				platypus.velocity = platypus.velocity - (proj * message.normal)	
-			end	
 		end	
 	end
 

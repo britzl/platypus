@@ -30,6 +30,18 @@ M.JUMP = hash("platypus_jump")
 M.SEPARATION_RAYS = hash("separation_rays")
 M.SEPARATION_SHAPES = hash("separation_shapes")
 
+local ALLOWED_CONFIG_KEYS = {
+	collisions = true,
+	separation = true,
+	wall_jump_power_ratio_y = true,
+	wall_jump_power_ratio_x = true,
+	allow_wall_jump = true,
+	allow_double_jump = true,
+	max_velocity = true,
+	gravity = true,
+	debug = true,
+}
+
 --- Create a platypus instance.
 -- This will provide all the functionality to control a game object in a
 -- platformer game. The functions will operate on the game object attached
@@ -45,24 +57,19 @@ function M.create(config)
 	assert(config.collisions.top, "You must provide distance to top edge of collision shape")
 	assert(config.collisions.bottom, "You must provide distance to bottom edge of collision shape")
 
-	config.separation = config.separation or M.SEPARATION_SHAPES
-	
-	local correction = vmath.vector3()
-	
-	-- get collision group lists and convert to sets
-	local collisions = {
-		ground = {}
-	}
-	for _,h in ipairs(config.collisions.ground) do
-		collisions.ground[h] = true
+	-- validate configuration
+	for config_key,_ in pairs(config) do
+		if not ALLOWED_CONFIG_KEYS[config_key] then
+			error(("Unknown config key %s"):format(config_key))
+		end
 	end
 
-	-- track current and previous state to detect state changes
-	local state = {
-		current = { wall_contact = vmath.vector3(), ground_contact = false, rays = {} },
-		previous = { rays = {} },
-	}
-
+	-- warn for deprecations
+	if config.separation then
+		print("WARNING! Config key 'separation' is deprecated and should be moved to the 'collisions' table!")
+		config.collisions.separation = config.collisions.separation or config.separation or M.SEPARATION_SHAPES
+	end
+		
 	-- public instance
 	local platypus = {
 		velocity = vmath.vector3(),
@@ -72,6 +79,22 @@ function M.create(config)
 		wall_jump_power_ratio_x = config.wall_jump_power_ratio_x or 0.35,
 		allow_double_jump = config.allow_double_jump or false,
 		allow_wall_jump = config.allow_wall_jump or false,
+		collisions = config.collisions,
+		debug = config.debug,
+	}
+	-- get collision group lists and convert to sets for faster lookup
+	local ground = {}
+	for _,h in ipairs(platypus.collisions.ground) do
+		ground[h] = true
+	end
+	
+	-- collision shape correction vector
+	local correction = vmath.vector3()
+	
+	-- track current and previous state to detect state changes
+	local state = {
+		current = { wall_contact = vmath.vector3(), ground_contact = false, rays = {} },
+		previous = { rays = {} },
 	}
 
 	-- movement based on user input
@@ -84,12 +107,12 @@ function M.create(config)
 	local RAY_CAST_DOWN_LEFT_ID = 5
 	local RAY_CAST_DOWN_RIGHT_ID = 6
 	
-	local RAY_CAST_LEFT = vmath.vector3(-config.collisions.left - 1, 0, 0)
-	local RAY_CAST_RIGHT = vmath.vector3(config.collisions.right + 1, 0, 0)
-	local RAY_CAST_DOWN = vmath.vector3(0, -config.collisions.bottom - 1, 0)
-	local RAY_CAST_UP = vmath.vector3(0, config.collisions.top + 1, 0)
-	local RAY_CAST_DOWN_LEFT = vmath.vector3(-config.collisions.left + 1, -config.collisions.bottom - 1, 0)
-	local RAY_CAST_DOWN_RIGHT = vmath.vector3(config.collisions.right - 1, -config.collisions.bottom - 1, 0)
+	local RAY_CAST_LEFT = vmath.vector3(-platypus.collisions.left - 1, 0, 0)
+	local RAY_CAST_RIGHT = vmath.vector3(platypus.collisions.right + 1, 0, 0)
+	local RAY_CAST_DOWN = vmath.vector3(0, -platypus.collisions.bottom - 1, 0)
+	local RAY_CAST_UP = vmath.vector3(0, platypus.collisions.top + 1, 0)
+	local RAY_CAST_DOWN_LEFT = vmath.vector3(-platypus.collisions.left + 1, -platypus.collisions.bottom - 1, 0)
+	local RAY_CAST_DOWN_RIGHT = vmath.vector3(platypus.collisions.right - 1, -platypus.collisions.bottom - 1, 0)
 
 	local RAYS = {
 		[RAY_CAST_LEFT_ID] = RAY_CAST_LEFT,
@@ -101,7 +124,7 @@ function M.create(config)
 	}
 
 	local function separate_ray(ray, message)
-		if config.separation == M.SEPARATION_RAYS then
+		if platypus.collisions.separation == M.SEPARATION_RAYS then
 			local pos = go.get_position()
 			local separation
 			if message.request_id == RAY_CAST_LEFT_ID then
@@ -122,8 +145,8 @@ function M.create(config)
 	end
 	
 	local function separate_collision(message)
-		if config.separation == M.SEPARATION_SHAPES and collisions.ground[message.group] then
-			-- separate collision objects and adjust velocity	
+		if platypus.collisions.separation == M.SEPARATION_SHAPES and ground[message.group] then
+			-- separate collision objects
 			local proj = vmath.dot(correction, message.normal)	
 			local comp = (message.distance - proj) * message.normal	
 			correction = correction + comp	
@@ -132,10 +155,10 @@ function M.create(config)
 	end
 
 	local function ray_cast(id, from, to)
-		if config.debug then
+		if platypus.debug then
 			msg.post("@render:", "draw_line", { start_point = from, end_point = to, color = RAY_COLOR } )
 		end
-		physics.ray_cast(from, to, config.collisions.ground, id)
+		physics.ray_cast(from, to, platypus.collisions.ground, id)
 	end
 	
 	local function jumping_up()
@@ -343,7 +366,7 @@ function M.create(config)
 
 
 	function platypus.toggle_debug()
-		config.debug = not config.debug
+		platypus.debug = not platypus.debug
 	end
 
 	return platypus

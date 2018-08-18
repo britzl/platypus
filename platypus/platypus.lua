@@ -269,7 +269,7 @@ function M.create(config)
 				state.current.wall_contact = -1
 				separate_ray(RAY_CAST_RIGHT, message)
 			elseif (message.request_id == RAY_CAST_DOWN_LEFT_ID or message.request_id == RAY_CAST_DOWN_RIGHT_ID)
-			and not state.current.ground_contact then
+			and not state.current.ground_contact and message.normal.y == 1 then
 				state.current.ground_contact = true
 				state.current.double_jumping = false
 				msg.post(".", "set_parent", { parent_id = message.id })

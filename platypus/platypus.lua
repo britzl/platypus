@@ -298,6 +298,7 @@ function M.create(config)
 	--- Call this every frame to update the platformer physics
 	-- @param dt
 	function platypus.update(dt)
+		assert(dt, "You must provide a delta time")
 		-- notify ground or air state change
 		if state.current.ground_contact and not state.previous.ground_contact then
 			msg.post("#", M.GROUND_CONTACT)

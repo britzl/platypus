@@ -149,6 +149,7 @@ function M.create(config)
 	-- Move the game object left
 	-- @param velocity Horizontal velocity
 	function platypus.left(velocity)
+		assert(velocity, "You must provide a velocity")
 		if state.current.wall_contact ~= 1 then
 			movement.x = -velocity
 		end
@@ -157,6 +158,7 @@ function M.create(config)
 	--- Move the game object right
 	-- @param velocity Horizontal velocity
 	function platypus.right(velocity)
+		assert(velocity, "You must provide a velocity")
 		if state.current.wall_contact ~= -1 then
 			movement.x = velocity
 		end
@@ -165,24 +167,28 @@ function M.create(config)
 	-- Move the game object up
 	-- @param velocity Vertical velocity
 	function platypus.up(velocity)
+		assert(velocity, "You must provide a velocity")
 		movement.y = velocity
 	end
 
 	--- Move the game object down
 	-- @param velocity Vertical velocity
 	function platypus.down(velocity)
+		assert(velocity, "You must provide a velocity")
 		movement.y = -velocity
 	end
 
 	--- Move the game object
 	-- @param velocity Velocity as a vector3
 	function platypus.move(velocity)
+		assert(velocity, "You must provide a velocity")
 		movement = velocity
 	end
 
 	--- Try to make the game object jump.
 	-- @param power The power of the jump (ie how high)
 	function platypus.jump(power)
+		assert(power, "You must provide a jump takeoff power")
 		if state.current.ground_contact then
 			platypus.velocity.y = power
 			msg.post("#", M.JUMP)
@@ -242,6 +248,8 @@ function M.create(config)
 	-- @param message_id
 	-- @param message
 	function platypus.on_message(message_id, message)
+		assert(message_id, "You must provide a message_id")
+		assert(message, "You must provide a message")
 		if message_id == POST_UPDATE then
 			-- reset transient state
 			movement.x = 0

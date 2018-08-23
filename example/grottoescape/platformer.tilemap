@@ -5842,6 +5842,20 @@ layers {
     v_flip: 0
   }
   cell {
+    x: 20
+    y: 4
+    tile: 0
+    h_flip: 0
+    v_flip: 0
+  }
+  cell {
+    x: 21
+    y: 4
+    tile: 3
+    h_flip: 0
+    v_flip: 0
+  }
+  cell {
     x: 24
     y: 4
     tile: 32
@@ -6108,6 +6122,20 @@ layers {
     v_flip: 0
   }
   cell {
+    x: 20
+    y: 5
+    tile: 32
+    h_flip: 0
+    v_flip: 0
+  }
+  cell {
+    x: 21
+    y: 5
+    tile: 35
+    h_flip: 0
+    v_flip: 0
+  }
+  cell {
     x: 24
     y: 5
     tile: 32
@@ -6367,6 +6395,20 @@ layers {
     v_flip: 0
   }
   cell {
+    x: 20
+    y: 6
+    tile: 32
+    h_flip: 0
+    v_flip: 0
+  }
+  cell {
+    x: 21
+    y: 6
+    tile: 35
+    h_flip: 0
+    v_flip: 0
+  }
+  cell {
     x: 24
     y: 6
     tile: 32
@@ -6621,6 +6663,20 @@ layers {
   cell {
     x: -7
     y: 6
+    tile: 35
+    h_flip: 0
+    v_flip: 0
+  }
+  cell {
+    x: 20
+    y: 7
+    tile: 32
+    h_flip: 0
+    v_flip: 0
+  }
+  cell {
+    x: 21
+    y: 7
     tile: 35
     h_flip: 0
     v_flip: 0
@@ -6885,6 +6941,20 @@ layers {
     v_flip: 0
   }
   cell {
+    x: 20
+    y: 8
+    tile: 32
+    h_flip: 0
+    v_flip: 0
+  }
+  cell {
+    x: 21
+    y: 8
+    tile: 35
+    h_flip: 0
+    v_flip: 0
+  }
+  cell {
     x: 24
     y: 8
     tile: 32
@@ -7144,6 +7214,20 @@ layers {
     v_flip: 0
   }
   cell {
+    x: 20
+    y: 9
+    tile: 32
+    h_flip: 0
+    v_flip: 0
+  }
+  cell {
+    x: 21
+    y: 9
+    tile: 35
+    h_flip: 0
+    v_flip: 0
+  }
+  cell {
     x: 24
     y: 9
     tile: 32
@@ -7403,6 +7487,20 @@ layers {
     v_flip: 0
   }
   cell {
+    x: 20
+    y: 10
+    tile: 32
+    h_flip: 0
+    v_flip: 0
+  }
+  cell {
+    x: 21
+    y: 10
+    tile: 35
+    h_flip: 0
+    v_flip: 0
+  }
+  cell {
     x: 24
     y: 10
     tile: 32
@@ -7657,6 +7755,20 @@ layers {
   cell {
     x: -7
     y: 10
+    tile: 35
+    h_flip: 0
+    v_flip: 0
+  }
+  cell {
+    x: 20
+    y: 11
+    tile: 32
+    h_flip: 0
+    v_flip: 0
+  }
+  cell {
+    x: 21
+    y: 11
     tile: 35
     h_flip: 0
     v_flip: 0
@@ -7917,6 +8029,20 @@ layers {
     x: -7
     y: 11
     tile: 35
+    h_flip: 0
+    v_flip: 0
+  }
+  cell {
+    x: 20
+    y: 12
+    tile: 24
+    h_flip: 0
+    v_flip: 0
+  }
+  cell {
+    x: 21
+    y: 12
+    tile: 27
     h_flip: 0
     v_flip: 0
   }

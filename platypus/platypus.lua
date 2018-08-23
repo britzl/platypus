@@ -134,7 +134,10 @@ function M.create(config)
 				separation = ray * (1 - message.fraction)
 			elseif message.request_id == RAY_CAST_RIGHT_ID then
 				separation = ray * (1 - message.fraction)
-			elseif (message.request_id == RAY_CAST_DOWN_LEFT_ID or message.request_id == RAY_CAST_DOWN_RIGHT_ID) then
+			elseif message.request_id == RAY_CAST_DOWN_LEFT_ID
+			or message.request_id == RAY_CAST_DOWN_RIGHT_ID
+			or message.request_id == RAY_CAST_DOWN_ID
+			then
 				separation = ray * (1 - message.fraction)
 				separation.x = 0
 				--separation.y = math.ceil(separation.y)
@@ -293,8 +296,10 @@ function M.create(config)
 			elseif message.request_id == RAY_CAST_RIGHT_ID then
 				state.current.wall_contact = -1
 				separate_ray(RAY_CAST_RIGHT, message)
-			elseif (message.request_id == RAY_CAST_DOWN_LEFT_ID or message.request_id == RAY_CAST_DOWN_RIGHT_ID)
-			and not state.current.ground_contact and message.normal.y == 1 then
+			elseif (message.request_id == RAY_CAST_DOWN_LEFT_ID
+			or message.request_id == RAY_CAST_DOWN_RIGHT_ID
+			or message.request_id == RAY_CAST_DOWN_ID)
+			and not state.current.ground_contact and message.normal.y > 0.7 then
 				state.current.ground_contact = true
 				state.current.double_jumping = false
 				msg.post(".", "set_parent", { parent_id = message.id })
@@ -308,12 +313,14 @@ function M.create(config)
 			end
 		elseif message_id == RAY_CAST_MISSED then
 			state.current.rays[message.request_id] = nil
-			-- if neither down left or down right hit anything this or
-			-- the last frame then we don't have ground contact anymore
+			-- if neither down, down left or down right hit anything this
+			-- or the last frame then we don't have ground contact anymore
 			if not state.current.rays[RAY_CAST_DOWN_LEFT_ID] and
 			not state.current.rays[RAY_CAST_DOWN_RIGHT_ID] and
+			not state.current.rays[RAY_CAST_DOWN_ID] and
 			not state.previous.rays[RAY_CAST_DOWN_LEFT_ID] and
-			not state.previous.rays[RAY_CAST_DOWN_RIGHT_ID]
+			not state.previous.rays[RAY_CAST_DOWN_RIGHT_ID] and
+			not state.previous.rays[RAY_CAST_DOWN_ID]
 			then
 				state.current.ground_contact = false
 				ground_id = nil
@@ -385,6 +392,7 @@ function M.create(config)
 		ray_cast(RAY_CAST_UP_ID, raycast_origin, raycast_origin + RAY_CAST_UP)
 		ray_cast(RAY_CAST_DOWN_LEFT_ID, raycast_origin, raycast_origin + RAY_CAST_DOWN_LEFT)
 		ray_cast(RAY_CAST_DOWN_RIGHT_ID, raycast_origin, raycast_origin + RAY_CAST_DOWN_RIGHT)
+		ray_cast(RAY_CAST_DOWN_ID, raycast_origin, raycast_origin + RAY_CAST_DOWN)
 	end
 
 

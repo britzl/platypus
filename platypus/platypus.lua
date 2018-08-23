@@ -150,10 +150,13 @@ function M.create(config)
 	local function separate_collision(message)
 		if platypus.collisions.separation == M.SEPARATION_SHAPES and ground[message.group] then
 			-- separate collision objects
+			if not state.current.ground_contact then
+				message.normal.y = 0
+			end
 			local proj = vmath.dot(correction, message.normal)	
 			local comp = (message.distance - proj) * message.normal	
 			correction = correction + comp	
-			go.set_position(go.get_position() + comp)	
+			go.set_position(go.get_position() + comp)
 		end	
 	end
 

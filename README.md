@@ -21,7 +21,7 @@ Use `platypus.create()` to create a Platypus instance. Use this to control a sin
 		self.platypus = platypus.create(config)
 	end
 
-	function update(dt)
+	function update(self, dt)
 		self.platypus.update(dt)
 	end
 
@@ -37,7 +37,7 @@ Use `platypus.left()`, `platypus.right()`, `platypus.up()`, `platypus.down()` an
 		self.platypus = platypus.create(config)
 	end
 
-	function update(dt)
+	function update(self, dt)
 		self.platypus.update(dt)
 	end
 
@@ -62,7 +62,7 @@ Use `platypus.jump()` to perform a jump and `platypus.abort_jump()` to reduce th
 		self.platypus = platypus.create(config)
 	end
 
-	function update(dt)
+	function update(self, dt)
 		self.platypus.update(dt)
 	end
 
@@ -90,7 +90,7 @@ Platypus will send messages for certain state changes so that scripts can react,
 		self.platypus = platypus.create(config)
 	end
 
-	function update(dt)
+	function update(self, dt)
 		self.platypus.update(dt)
 	end
 

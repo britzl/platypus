@@ -108,7 +108,7 @@ convex_hulls {
 convex_hulls {
   index: 80
   count: 4
-  collision_group: "ground"
+  collision_group: "oneway"
 }
 convex_hulls {
   index: 84
@@ -326,5 +326,6 @@ convex_hulls {
   collision_group: ""
 }
 collision_groups: "ground"
+collision_groups: "oneway"
 extrude_borders: 2
 inner_padding: 0

@@ -42,6 +42,12 @@ local ALLOWED_CONFIG_KEYS = {
 	debug = true,
 }
 
+M.DIR_UP = 0x01
+M.DIR_LEFT = 0x02
+M.DIR_RIGHT = 0x04
+M.DIR_DOWN = 0x08
+M.DIR_ALL = M.DIR_UP + M.DIR_LEFT + M.DIR_RIGHT + M.DIR_DOWN
+
 --- Create a platypus instance.
 -- This will provide all the functionality to control a game object in a
 -- platformer game. The functions will operate on the game object attached
@@ -51,7 +57,7 @@ local ALLOWED_CONFIG_KEYS = {
 function M.create(config)
 	assert(config, "You must provide a config")
 	assert(config.collisions, "You must provide a collisions config")
-	assert(config.collisions.ground, "You must provide a list of ground collision hashes")
+	assert(config.collisions.ground or config.collisions.groups, "You must provide a list of collision hashes")
 	assert(config.collisions.left, "You must provide distance to left edge of collision shape")
 	assert(config.collisions.right, "You must provide distance to right edge of collision shape")
 	assert(config.collisions.top, "You must provide distance to top edge of collision shape")
@@ -69,6 +75,13 @@ function M.create(config)
 		print("WARNING! Config key 'separation' is deprecated and should be moved to the 'collisions' table!")
 		config.collisions.separation = config.collisions.separation or config.separation or M.SEPARATION_SHAPES
 	end
+	if config.collisions.ground then
+		print("WARNING! Config key 'collisions.ground' is deprecated. Use 'collisions.groups' key-value pairs instead!")
+		config.collisions.groups = {}
+		for _,id in ipairs(config.collisions.ground) do
+			config.collisions.groups[id] = M.DIR_ALL
+		end
+	end
 		
 	-- public instance
 	local platypus = {
@@ -82,14 +95,14 @@ function M.create(config)
 		collisions = config.collisions,
 		debug = config.debug,
 	}
-	-- get collision group lists and convert to sets for faster lookup
-	local ground = {}
-	for _,h in ipairs(platypus.collisions.ground) do
-		ground[h] = true
+	-- get collision group set and convert to list for ray casts
+	local collision_groups_list = {}
+	for id,_ in pairs(platypus.collisions.groups) do
+		collision_groups_list[#collision_groups_list + 1] = id
 	end
 
-	-- id of the ground that this instance is parented to
-	local ground_id = nil
+	-- id of the collision object that this instance is parented to
+	local parent_id = nil
 	
 	-- collision shape correction vector
 	local correction = vmath.vector3()
@@ -126,6 +139,10 @@ function M.create(config)
 		[RAY_CAST_DOWN_RIGHT_ID] = RAY_CAST_DOWN_RIGHT,
 	}
 
+	local function check_group_direction(group, direction)
+		return bit.band(config.collisions.groups[group], direction) > 0
+	end
+
 	local function separate_ray(ray, message)
 		if platypus.collisions.separation == M.SEPARATION_RAYS then
 			local pos = go.get_position()
@@ -151,7 +168,16 @@ function M.create(config)
 	end
 	
 	local function separate_collision(message)
-		if platypus.collisions.separation == M.SEPARATION_SHAPES and ground[message.group] then
+		if platypus.collisions.separation == M.SEPARATION_SHAPES and config.collisions.groups[message.group] then
+			if message.normal.y > 0 and not check_group_direction(message.group, M.DIR_DOWN) then
+				return
+			elseif message.normal.y < 0 and not check_group_direction(message.group, M.DIR_UP) then
+				return
+			elseif message.normal.x > 0 and not check_group_direction(message.group, M.DIR_LEFT) then
+				return
+			elseif message.normal.x < 0 and not check_group_direction(message.group, M.DIR_RIGHT) then
+				return
+			end
 			-- separate collision objects
 			if not state.current.ground_contact then
 				message.normal.y = 0
@@ -167,7 +193,7 @@ function M.create(config)
 		if platypus.debug then
 			msg.post("@render:", "draw_line", { start_point = from, end_point = to, color = RAY_COLOR } )
 		end
-		physics.ray_cast(from, to, platypus.collisions.ground, id)
+		physics.ray_cast(from, to, collision_groups_list, id)
 	end
 	
 	local function jumping_up()
@@ -291,25 +317,33 @@ function M.create(config)
 		elseif message_id == RAY_CAST_RESPONSE then
 			state.current.rays[message.request_id] = message
 			if message.request_id == RAY_CAST_LEFT_ID then
-				state.current.wall_contact = 1
-				separate_ray(RAY_CAST_LEFT, message)
+				if check_group_direction(message.group, M.DIR_LEFT) then
+					state.current.wall_contact = 1
+					separate_ray(RAY_CAST_LEFT, message)
+				end
 			elseif message.request_id == RAY_CAST_RIGHT_ID then
-				state.current.wall_contact = -1
-				separate_ray(RAY_CAST_RIGHT, message)
+				if check_group_direction(message.group, M.DIR_RIGHT) then
+					state.current.wall_contact = -1
+					separate_ray(RAY_CAST_RIGHT, message)
+				end
 			elseif (message.request_id == RAY_CAST_DOWN_LEFT_ID
 			or message.request_id == RAY_CAST_DOWN_RIGHT_ID
 			or message.request_id == RAY_CAST_DOWN_ID)
 			and not state.current.ground_contact and message.normal.y > 0.7 then
-				state.current.ground_contact = true
-				state.current.double_jumping = false
-				msg.post(".", "set_parent", { parent_id = message.id })
-				ground_id = message.id
-				separate_ray(RAYS[message.request_id], message)
-			elseif message.request_id == RAY_CAST_UP_ID then
-				if platypus.velocity.y > 0 then
-					platypus.velocity.y = 0
+				if check_group_direction(message.group, M.DIR_DOWN) then
+					state.current.ground_contact = true
+					state.current.double_jumping = false
+					msg.post(".", "set_parent", { parent_id = message.id })
+					parent_id = message.id
+					separate_ray(RAYS[message.request_id], message)
 				end
-				separate_ray(RAY_CAST_UP, message)
+			elseif message.request_id == RAY_CAST_UP_ID then
+				if check_group_direction(message.group, M.DIR_UP) then
+					if platypus.velocity.y > 0 then
+						platypus.velocity.y = 0
+					end
+					separate_ray(RAY_CAST_UP, message)
+				end
 			end
 		elseif message_id == RAY_CAST_MISSED then
 			state.current.rays[message.request_id] = nil
@@ -323,7 +357,7 @@ function M.create(config)
 			not state.previous.rays[RAY_CAST_DOWN_ID]
 			then
 				state.current.ground_contact = false
-				ground_id = nil
+				parent_id = nil
 				msg.post(".", "set_parent", { parent_id = nil })
 			end
 		end
@@ -335,10 +369,10 @@ function M.create(config)
 		assert(dt, "You must provide a delta time")
 
 		-- was the ground we're standing on removed?
-		if ground_id then
-			local ok, err = pcall(go.get_position, ground_id)
+		if parent_id then
+			local ok, err = pcall(go.get_position, parent_id)
 			if not ok then
-				ground_id = nil
+				parent_id = nil
 				state.current.ground_contact = false
 				go.set_position(go.get_position() + state.current.world_position - state.current.position)
 			end

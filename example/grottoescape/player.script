@@ -23,7 +23,10 @@ function init(self)
 	self.platypus = platypus.create({
 		collisions = {
 			separation = platypus.SEPARATION_SHAPES,
-			ground = { hash("ground") },
+			groups = {
+				[hash("ground")] = platypus.DIR_ALL,
+				[hash("oneway")] = platypus.DIR_DOWN,
+			},
 			left = 7, right = 7, top = 6, bottom = 8,
 		},
 		gravity = -800,

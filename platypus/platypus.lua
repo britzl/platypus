@@ -329,8 +329,13 @@ function M.create(config)
 			elseif (message.request_id == RAY_CAST_DOWN_LEFT_ID
 			or message.request_id == RAY_CAST_DOWN_RIGHT_ID
 			or message.request_id == RAY_CAST_DOWN_ID)
-			and not state.current.ground_contact and message.normal.y > 0.7 then
-				if check_group_direction(message.group, M.DIR_DOWN) then
+			and not state.current.ground_contact
+			and message.normal.y > 0.7
+			and check_group_direction(message.group, M.DIR_DOWN)
+			then
+				local moving_down = platypus.velocity.y <= 0
+				local moving_down_and_in_air = moving_down and not state.previous.rays[message.request_id]
+				if moving_down_and_in_air or state.previous.ground_contact then
 					state.current.ground_contact = true
 					state.current.double_jumping = false
 					msg.post(".", "set_parent", { parent_id = message.id })

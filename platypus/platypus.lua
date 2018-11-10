@@ -82,7 +82,7 @@ function M.create(config)
 			config.collisions.groups[id] = M.DIR_ALL
 		end
 	end
-		
+
 	-- public instance
 	local platypus = {
 		velocity = vmath.vector3(),
@@ -103,10 +103,10 @@ function M.create(config)
 
 	-- id of the collision object that this instance is parented to
 	local parent_id = nil
-	
+
 	-- collision shape correction vector
 	local correction = vmath.vector3()
-	
+
 	-- track current and previous state to detect state changes
 	local state = {
 		current = { wall_contact = vmath.vector3(), ground_contact = false, rays = {} },
@@ -122,7 +122,7 @@ function M.create(config)
 	local RAY_CAST_UP_ID = 4
 	local RAY_CAST_DOWN_LEFT_ID = 5
 	local RAY_CAST_DOWN_RIGHT_ID = 6
-	
+
 	local RAY_CAST_LEFT = vmath.vector3(-platypus.collisions.left - 1, 0, 0)
 	local RAY_CAST_RIGHT = vmath.vector3(platypus.collisions.right + 1, 0, 0)
 	local RAY_CAST_DOWN = vmath.vector3(0, -platypus.collisions.bottom - 1, 0)
@@ -166,7 +166,7 @@ function M.create(config)
 			go.set_position(pos)
 		end
 	end
-	
+
 	local function separate_collision(message)
 		if platypus.collisions.separation == M.SEPARATION_SHAPES and config.collisions.groups[message.group] then
 			if message.normal.y > 0 and not check_group_direction(message.group, M.DIR_DOWN) then
@@ -182,11 +182,11 @@ function M.create(config)
 			if not state.current.ground_contact then
 				message.normal.y = 0
 			end
-			local proj = vmath.dot(correction, message.normal)	
-			local comp = (message.distance - proj) * message.normal	
-			correction = correction + comp	
+			local proj = vmath.dot(correction, message.normal)
+			local comp = (message.distance - proj) * message.normal
+			correction = correction + comp
 			go.set_position(go.get_position() + comp)
-		end	
+		end
 	end
 
 	local function ray_cast(id, from, to)
@@ -195,7 +195,7 @@ function M.create(config)
 		end
 		physics.ray_cast(from, to, collision_groups_list, id)
 	end
-	
+
 	local function jumping_up()
 		return (platypus.velocity.y > 0 and platypus.gravity < 0) or (platypus.velocity.y < 0 and platypus.gravity > 0)
 	end
@@ -297,7 +297,7 @@ function M.create(config)
 	function platypus.has_wall_contact()
 		return state.current.wall_contact and state.previous.wall_contact
 	end
-	
+
 	--- Forward any on_message calls here to resolve physics collisions
 	-- @param message_id
 	-- @param message
@@ -329,18 +329,22 @@ function M.create(config)
 			elseif (message.request_id == RAY_CAST_DOWN_LEFT_ID
 			or message.request_id == RAY_CAST_DOWN_RIGHT_ID
 			or message.request_id == RAY_CAST_DOWN_ID)
-			and not state.current.ground_contact
 			and message.normal.y > 0.7
 			and check_group_direction(message.group, M.DIR_DOWN)
 			then
-				local moving_down = platypus.velocity.y <= 0
-				local moving_down_and_in_air = moving_down and not state.previous.rays[message.request_id]
-				if moving_down_and_in_air or state.previous.ground_contact then
-					state.current.ground_contact = true
-					state.current.double_jumping = false
+				if not state.current.ground_contact then
+					local moving_down = platypus.velocity.y <= 0
+					local moving_down_and_in_air = moving_down and not state.previous.rays[message.request_id]
+					if moving_down_and_in_air or state.previous.ground_contact then
+						state.current.ground_contact = true
+						state.current.double_jumping = false
+						msg.post(".", "set_parent", { parent_id = message.id })
+						parent_id = message.id
+						separate_ray(RAYS[message.request_id], message)
+					end
+				elseif state.current.ground_contact and parent_id ~= message.id then
 					msg.post(".", "set_parent", { parent_id = message.id })
 					parent_id = message.id
-					separate_ray(RAYS[message.request_id], message)
 				end
 			elseif message.request_id == RAY_CAST_UP_ID then
 				if check_group_direction(message.group, M.DIR_UP) then
@@ -375,7 +379,7 @@ function M.create(config)
 
 		-- was the ground we're standing on removed?
 		if parent_id then
-			local ok, err = pcall(go.get_position, parent_id)
+			local ok, _ = pcall(go.get_position, parent_id)
 			if not ok then
 				parent_id = nil
 				state.current.ground_contact = false

@@ -102,7 +102,7 @@ function M.create(config)
 	end
 
 	-- id of the collision object that this instance is parented to
-	local parent_id = nil
+	platypus.parent_id = nil
 
 	-- collision shape correction vector
 	local correction = vmath.vector3()
@@ -339,12 +339,12 @@ function M.create(config)
 						state.current.ground_contact = true
 						state.current.double_jumping = false
 						msg.post(".", "set_parent", { parent_id = message.id })
-						parent_id = message.id
+						platypus.parent_id = message.id
 						separate_ray(RAYS[message.request_id], message)
 					end
-				elseif state.current.ground_contact and parent_id ~= message.id then
+				elseif state.current.ground_contact and platypus.parent_id ~= message.id then
 					msg.post(".", "set_parent", { parent_id = message.id })
-					parent_id = message.id
+					platypus.parent_id = message.id
 				end
 			elseif message.request_id == RAY_CAST_UP_ID then
 				if check_group_direction(message.group, M.DIR_UP) then
@@ -366,7 +366,7 @@ function M.create(config)
 			not state.previous.rays[RAY_CAST_DOWN_ID]
 			then
 				state.current.ground_contact = false
-				parent_id = nil
+				platypus.parent_id = nil
 				msg.post(".", "set_parent", { parent_id = nil })
 			end
 		end
@@ -378,10 +378,10 @@ function M.create(config)
 		assert(dt, "You must provide a delta time")
 
 		-- was the ground we're standing on removed?
-		if parent_id then
-			local ok, _ = pcall(go.get_position, parent_id)
+		if platypus.parent_id then
+			local ok, _ = pcall(go.get_position, platypus.parent_id)
 			if not ok then
-				parent_id = nil
+				platypus.parent_id = nil
 				state.current.ground_contact = false
 				go.set_position(go.get_position() + state.current.world_position - state.current.position)
 			end

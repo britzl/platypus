@@ -108,10 +108,13 @@ function M.create(config)
 	local correction = vmath.vector3()
 
 	-- track current and previous state to detect state changes
-	local state = {
-		current = { wall_contact = vmath.vector3(), ground_contact = false, rays = {} },
-		previous = { rays = {} },
-	}
+	local function create_state()
+		return { wall_contact = vmath.vector3(), ground_contact = false, rays = {} }
+	end
+	local state = {}
+	state.current = create_state()
+	state.previous = create_state()
+
 
 	-- movement based on user input
 	local movement = vmath.vector3()

@@ -172,19 +172,40 @@ function M.create(config)
 
 	local function separate_collision(message)
 		if platypus.collisions.separation == M.SEPARATION_SHAPES and config.collisions.groups[message.group] then
-			if message.normal.y > 0 and not check_group_direction(message.group, M.DIR_DOWN) then
+			local check_down = check_group_direction(message.group, M.DIR_DOWN)
+			local check_up = check_group_direction(message.group, M.DIR_UP)
+			local check_left = check_group_direction(message.group, M.DIR_LEFT)
+			local check_right = check_group_direction(message.group, M.DIR_RIGHT)
+			if message.normal.y > 0 and not check_down then
 				return
-			elseif message.normal.y < 0 and not check_group_direction(message.group, M.DIR_UP) then
+			elseif message.normal.y < 0 and not check_up then
 				return
-			elseif message.normal.x > 0 and not check_group_direction(message.group, M.DIR_LEFT) then
+			elseif message.normal.x > 0 and not check_left then
 				return
-			elseif message.normal.x < 0 and not check_group_direction(message.group, M.DIR_RIGHT) then
+			elseif message.normal.x < 0 and not check_right then
 				return
 			end
-			-- separate collision objects
+
+			-- remove any jitter when falling next to a wall
 			if not state.current.ground_contact then
 				message.normal.y = 0
 			end
+
+			-- don't push out of walls
+			if not check_left and message.normal.x < 0 then
+				message.normal.x = 0
+			elseif not check_right and message.normal.x > 0 then
+				message.normal.x = 0
+			end
+
+			-- don't push out from platforms
+			if not check_up and message.normal.y > 0 then
+				message.normal.y = 0
+			elseif not check_down and message.normal.y < 0 then
+				message.normal.y = 0
+			end
+
+			-- separate collision objects
 			local proj = vmath.dot(correction, message.normal)
 			local comp = (message.distance - proj) * message.normal
 			correction = correction + comp

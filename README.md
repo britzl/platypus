@@ -136,11 +136,19 @@ The ```config``` table can have the following values:
 The `collisions` table can have the following values:
 
 * `separation` (hash) - How to do collision separation. Use platypus.SEPARATION_SHAPES to separate using collision shapes and platypus.SEPARATION_RAYS to separate using ray casts. Default: platypus.SEPARATION_SHAPES
-* `ground` (table) - List with collision group hashes for collision objects representing ground. Used when separating collisions using collision shapes.
+* `groups` (table) - List with collision groups. Used when separating collisions.
 * `left` (number) - Distance from game object center to left edge of collision shape. Used by ray casts to detect ground and wall contact and when separating collisions using rays.
 * `right` (number) - Distance from game object center to right edge of collision shape. Used by ray casts to detect ground and wall contact and when separating collisions using rays.
 * `top` (number) - Distance from game object center to top edge of collision shape. Used by ray casts to detect ground and wall contact and when separating collisions using rays.
 * `bottom` (number) - Distance from game object center to bottom edge of collision shape. Used by ray casts to detect ground and wall contact and when separating collisions using rays.
+
+The `groups` table should map collision group hashes as keys to which collision directions to detect collisions with:
+
+	{
+		[hash("ground")] = platypus.DIR_ALL,
+		[hash("onewayplatform")] = platypus.DIR_DOWN,
+		[hash("onewaydoor")] = platypus.DIR_LEFT,
+	}
 
 **RETURN**
 * `instance` (table) - The created Platypus instance

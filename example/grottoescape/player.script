@@ -14,6 +14,7 @@ local function play_animation(self, animation)
 	end
 end
 
+
 function init(self)
 	input.acquire()
 	input_mapper.bind(input_mapper.KEY_LEFT, LEFT)
@@ -22,10 +23,13 @@ function init(self)
 	input_mapper.bind(input_mapper.KEY_1, TOGGLE_DEBUG)
 	self.platypus = platypus.create({
 		collisions = {
+			--separation = platypus.SEPARATION_RAYS,
 			separation = platypus.SEPARATION_SHAPES,
 			groups = {
 				[hash("ground")] = platypus.DIR_ALL,
-				[hash("oneway")] = platypus.DIR_DOWN,
+				--[hash("onewayplatform")] = platypus.DIR_ALL,
+				[hash("onewayplatform")] = platypus.DIR_DOWN,
+				[hash("onewaydoor")] = platypus.DIR_LEFT,
 			},
 			left = 7, right = 7, top = 6, bottom = 8,
 		},

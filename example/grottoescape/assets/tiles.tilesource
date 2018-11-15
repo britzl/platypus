@@ -108,7 +108,7 @@ convex_hulls {
 convex_hulls {
   index: 80
   count: 4
-  collision_group: "oneway"
+  collision_group: "onewayplatform"
 }
 convex_hulls {
   index: 84
@@ -238,7 +238,7 @@ convex_hulls {
 convex_hulls {
   index: 184
   count: 4
-  collision_group: ""
+  collision_group: "onewaydoor"
 }
 convex_hulls {
   index: 188
@@ -326,6 +326,7 @@ convex_hulls {
   collision_group: ""
 }
 collision_groups: "ground"
-collision_groups: "oneway"
+collision_groups: "onewaydoor"
+collision_groups: "onewayplatform"
 extrude_borders: 2
 inner_padding: 0

@@ -109,7 +109,7 @@ function M.create(config)
 
 	-- track current and previous state to detect state changes
 	local function create_state()
-		return { wall_contact = vmath.vector3(), ground_contact = false, rays = {} }
+		return { wall_contact = false, ground_contact = false, rays = {}, down_rays = {} }
 	end
 	local state = {}
 	state.current = create_state()
@@ -121,10 +121,12 @@ function M.create(config)
 
 	local RAY_CAST_LEFT_ID = 1
 	local RAY_CAST_RIGHT_ID = 2
-	local RAY_CAST_DOWN_ID = 3
-	local RAY_CAST_UP_ID = 4
-	local RAY_CAST_DOWN_LEFT_ID = 5
-	local RAY_CAST_DOWN_RIGHT_ID = 6
+	local RAY_CAST_UP_ID = 3
+	local RAY_CAST_UP_LEFT_ID = 4
+	local RAY_CAST_UP_RIGHT_ID = 5
+	local RAY_CAST_DOWN_ID = 6
+	local RAY_CAST_DOWN_LEFT_ID = 7
+	local RAY_CAST_DOWN_RIGHT_ID = 8
 
 	local RAY_CAST_LEFT = vmath.vector3(-platypus.collisions.left - 1, 0, 0)
 	local RAY_CAST_RIGHT = vmath.vector3(platypus.collisions.right + 1, 0, 0)
@@ -132,22 +134,40 @@ function M.create(config)
 	local RAY_CAST_UP = vmath.vector3(0, platypus.collisions.top + 1, 0)
 	local RAY_CAST_DOWN_LEFT = vmath.vector3(-platypus.collisions.left + 1, -platypus.collisions.bottom - 1, 0)
 	local RAY_CAST_DOWN_RIGHT = vmath.vector3(platypus.collisions.right - 1, -platypus.collisions.bottom - 1, 0)
+	local RAY_CAST_UP_LEFT = vmath.vector3(-platypus.collisions.left + 1, platypus.collisions.top + 1, 0)
+	local RAY_CAST_UP_RIGHT = vmath.vector3(platypus.collisions.right - 1, platypus.collisions.top + 1, 0)
+
+	local RAY_CAST_DOWN_FRACTION = vmath.length(vmath.vector3(0, -platypus.collisions.bottom+1, 0)) / vmath.length(RAY_CAST_DOWN)
 
 	local RAYS = {
 		[RAY_CAST_LEFT_ID] = RAY_CAST_LEFT,
 		[RAY_CAST_RIGHT_ID] = RAY_CAST_RIGHT,
 		[RAY_CAST_DOWN_ID] = RAY_CAST_DOWN,
 		[RAY_CAST_UP_ID] = RAY_CAST_UP,
+		[RAY_CAST_UP_LEFT_ID] = RAY_CAST_UP_LEFT,
+		[RAY_CAST_UP_RIGHT_ID] = RAY_CAST_UP_RIGHT,
 		[RAY_CAST_DOWN_LEFT_ID] = RAY_CAST_DOWN_LEFT,
 		[RAY_CAST_DOWN_RIGHT_ID] = RAY_CAST_DOWN_RIGHT,
 	}
 
+	local ray_cast_count = 0
+	
+	local inside = {}
+
+	local function is_inside(ray)
+		if not ray then
+			return false
+		end
+		return inside[ray.id]
+	end
+
+	
 	local function check_group_direction(group, direction)
 		return bit.band(config.collisions.groups[group], direction) > 0
 	end
 
-	local function separate_ray(ray, message)
-		if platypus.collisions.separation == M.SEPARATION_RAYS then
+	local function separate_ray(ray, message, force)
+		if platypus.collisions.separation == M.SEPARATION_RAYS or force then
 			local pos = go.get_position()
 			local separation
 			if message.request_id == RAY_CAST_LEFT_ID then
@@ -160,7 +180,7 @@ function M.create(config)
 			then
 				separation = ray * (1 - message.fraction)
 				separation.x = 0
-				--separation.y = math.ceil(separation.y)
+				separation.y = math.ceil(separation.y)
 				pos.y = math.floor(pos.y)
 			elseif message.request_id == RAY_CAST_UP_ID then
 				separation = ray * (1 - message.fraction)
@@ -217,6 +237,7 @@ function M.create(config)
 		if platypus.debug then
 			msg.post("@render:", "draw_line", { start_point = from, end_point = to, color = RAY_COLOR } )
 		end
+		ray_cast_count = ray_cast_count + 1
 		physics.ray_cast(from, to, collision_groups_list, id)
 	end
 
@@ -322,6 +343,97 @@ function M.create(config)
 		return state.current.wall_contact and state.previous.wall_contact
 	end
 
+	--- Handle the result of all ray casts this frame
+	local function handle_rays()
+		local rays = state.current.rays
+		local up = rays[RAY_CAST_UP_ID]
+		local left = rays[RAY_CAST_LEFT_ID]
+		local right = rays[RAY_CAST_RIGHT_ID]
+		local down = rays[RAY_CAST_DOWN_ID]
+		local down_left = rays[RAY_CAST_DOWN_LEFT_ID]
+		local down_right = rays[RAY_CAST_DOWN_RIGHT_ID]
+
+		if up and check_group_direction(up.group, M.DIR_UP) then
+			if platypus.velocity.y > 0 then
+				platypus.velocity.y = 0
+			end
+			separate_ray(RAY_CAST_UP, up)
+		end
+		if up_left and check_group_direction(up_left.group, M.DIR_UP) then
+			if platypus.velocity.y > 0 then
+				platypus.velocity.y = 0
+			end
+			separate_ray(RAY_CAST_UP_LEFT, up_left)
+		end
+		if up_right and check_group_direction(up_right.group, M.DIR_UP) then
+			if platypus.velocity.y > 0 then
+				platypus.velocity.y = 0
+			end
+			separate_ray(RAY_CAST_UP_RIGHT, up_right)
+		end
+		
+		if left and check_group_direction(left.group, M.DIR_LEFT) then
+			state.current.wall_contact = 1
+			separate_ray(RAY_CAST_LEFT, left)
+		end
+		if right and check_group_direction(right.group, M.DIR_RIGHT) then
+			state.current.wall_contact = -1
+			separate_ray(RAY_CAST_RIGHT, right)
+		end
+
+		-- build map of downward facing rays that hit something we care about
+		local down_rays = state.current.down_rays
+		down_rays[RAY_CAST_DOWN_ID] = (down and down.normal.y > 0.7 and check_group_direction(down.group, M.DIR_DOWN)) and down or nil
+		down_rays[RAY_CAST_DOWN_LEFT_ID] = (down_left and down_left.normal.y > 0.7 and check_group_direction(down_left.group, M.DIR_DOWN)) and down_left or nil
+		down_rays[RAY_CAST_DOWN_RIGHT_ID] = (down_right and down_right.normal.y > 0.7 and check_group_direction(down_right.group, M.DIR_DOWN)) and down_right or nil
+
+		state.current.changed_parent = false
+
+		-- any downward facing ray that hit something?
+		if next(down_rays) then
+			-- on ground - check for change of parent
+			if state.current.ground_contact then
+				platypus.velocity.y = 0
+
+				-- exit if any of the rays have the same parent as the current one
+				for _,ray in pairs(down_rays) do
+					if platypus.parent_id == ray.id then
+						return
+					end
+				end
+				-- get the new parent from any of the rays in the list
+				local ray = down_rays[next(down_rays)]
+				if ray.fraction < 0.8 then
+					separate_ray(RAYS[ray.request_id], ray, true)
+				end
+				msg.post(".", "set_parent", { parent_id = ray.id })
+				platypus.parent_id = ray.id
+				state.current.changed_parent = true
+			-- no ground contact - check for ground contact
+			else
+				local moving_down = platypus.velocity.y <= 0
+				for _,ray in pairs(down_rays) do
+					local moving_down_and_in_air = moving_down and not state.previous.down_rays[ray.request_id]
+					if moving_down_and_in_air or state.previous.ground_contact then
+						state.current.ground_contact = true
+						state.current.double_jumping = false
+						msg.post(".", "set_parent", { parent_id = ray.id })
+						platypus.parent_id = ray.id
+						state.current.changed_parent = true
+						separate_ray(RAYS[ray.request_id], ray, true)
+						break
+					end
+				end
+			end
+		-- if neither down, down left or down right hit anything this
+		-- or the last frame then we don't have ground contact anymore
+		elseif not next(down_rays) and not next(state.previous.down_rays) then
+			state.current.ground_contact = false
+			platypus.parent_id = nil
+			msg.post(".", "set_parent", { parent_id = nil })
+		end
+	end
+
 	--- Forward any on_message calls here to resolve physics collisions
 	-- @param message_id
 	-- @param message
@@ -340,58 +452,15 @@ function M.create(config)
 			separate_collision(message)
 		elseif message_id == RAY_CAST_RESPONSE then
 			state.current.rays[message.request_id] = message
-			if message.request_id == RAY_CAST_LEFT_ID then
-				if check_group_direction(message.group, M.DIR_LEFT) then
-					state.current.wall_contact = 1
-					separate_ray(RAY_CAST_LEFT, message)
-				end
-			elseif message.request_id == RAY_CAST_RIGHT_ID then
-				if check_group_direction(message.group, M.DIR_RIGHT) then
-					state.current.wall_contact = -1
-					separate_ray(RAY_CAST_RIGHT, message)
-				end
-			elseif (message.request_id == RAY_CAST_DOWN_LEFT_ID
-			or message.request_id == RAY_CAST_DOWN_RIGHT_ID
-			or message.request_id == RAY_CAST_DOWN_ID)
-			and message.normal.y > 0.7
-			and check_group_direction(message.group, M.DIR_DOWN)
-			then
-				if not state.current.ground_contact then
-					local moving_down = platypus.velocity.y <= 0
-					local moving_down_and_in_air = moving_down and not state.previous.rays[message.request_id]
-					if moving_down_and_in_air or state.previous.ground_contact then
-						state.current.ground_contact = true
-						state.current.double_jumping = false
-						msg.post(".", "set_parent", { parent_id = message.id })
-						platypus.parent_id = message.id
-						separate_ray(RAYS[message.request_id], message)
-					end
-				elseif state.current.ground_contact and platypus.parent_id ~= message.id then
-					msg.post(".", "set_parent", { parent_id = message.id })
-					platypus.parent_id = message.id
-				end
-			elseif message.request_id == RAY_CAST_UP_ID then
-				if check_group_direction(message.group, M.DIR_UP) then
-					if platypus.velocity.y > 0 then
-						platypus.velocity.y = 0
-					end
-					separate_ray(RAY_CAST_UP, message)
-				end
+			ray_cast_count = ray_cast_count - 1
+			if ray_cast_count == 0 then
+				handle_rays()
 			end
 		elseif message_id == RAY_CAST_MISSED then
 			state.current.rays[message.request_id] = nil
-			-- if neither down, down left or down right hit anything this
-			-- or the last frame then we don't have ground contact anymore
-			if not state.current.rays[RAY_CAST_DOWN_LEFT_ID] and
-			not state.current.rays[RAY_CAST_DOWN_RIGHT_ID] and
-			not state.current.rays[RAY_CAST_DOWN_ID] and
-			not state.previous.rays[RAY_CAST_DOWN_LEFT_ID] and
-			not state.previous.rays[RAY_CAST_DOWN_RIGHT_ID] and
-			not state.previous.rays[RAY_CAST_DOWN_ID]
-			then
-				state.current.ground_contact = false
-				platypus.parent_id = nil
-				msg.post(".", "set_parent", { parent_id = nil })
+			ray_cast_count = ray_cast_count - 1
+			if ray_cast_count == 0 then
+				handle_rays()
 			end
 		end
 	end
@@ -424,7 +493,7 @@ function M.create(config)
 		end
 
 		-- apply gravity if not standing on the ground
-		if not state.current.ground_contact then
+		if not state.current.ground_contact or state.current.changed_parent then
 			platypus.velocity.y = platypus.velocity.y + platypus.gravity * dt
 		end
 

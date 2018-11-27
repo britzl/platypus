@@ -250,7 +250,25 @@ function M.create(config)
 	function platypus.left(velocity)
 		assert(velocity, "You must provide a velocity")
 		if state.current.wall_contact ~= 1 then
-			movement.x = -velocity
+			local slope_normal = state.current.slope and state.current.slope.normal
+			if slope_normal then
+				-- moving up or down the slope?
+				if slope_normal.x > 0 then
+					-- moving up - push up
+					-- the right amount depends on how the slope
+					-- to much = airborne
+					-- too little = pushing into slope
+					local ratio = 1 - (slope_normal.x / slope_normal.y)
+					movement.y = velocity * slope_normal.x * ratio
+					movement.x = -velocity * slope_normal.y
+				else
+					-- moving down - push down
+					movement.y = velocity * slope_normal.x
+					movement.x = -velocity * slope_normal.y
+				end
+			else
+				movement.x = -velocity
+			end
 		end
 	end
 
@@ -259,7 +277,22 @@ function M.create(config)
 	function platypus.right(velocity)
 		assert(velocity, "You must provide a velocity")
 		if state.current.wall_contact ~= -1 then
-			movement.x = velocity
+			local slope_normal = state.current.slope and state.current.slope.normal
+			if slope_normal then
+				-- moving up or down the slope?
+				if slope_normal.x > 0 then
+					-- moving down
+					movement.y = -velocity * slope_normal.x
+					movement.x = velocity * slope_normal.y
+				else
+					-- moving up
+					local ratio = 1 - math.abs(slope_normal.x / slope_normal.y)
+					movement.y = -velocity * slope_normal.x * ratio
+					movement.x = velocity * slope_normal.y
+				end
+			else
+				movement.x = velocity
+			end
 		end
 	end
 
@@ -387,6 +420,16 @@ function M.create(config)
 		down_rays[RAY_CAST_DOWN_LEFT_ID] = (down_left and down_left.normal.y > 0.7 and check_group_direction(down_left.group, M.DIR_DOWN)) and down_left or nil
 		down_rays[RAY_CAST_DOWN_RIGHT_ID] = (down_right and down_right.normal.y > 0.7 and check_group_direction(down_right.group, M.DIR_DOWN)) and down_right or nil
 
+		local slope = nil
+		if (down_rays[RAY_CAST_DOWN_LEFT_ID] and not down_rays[RAY_CAST_DOWN_ID] and not down_rays[RAY_CAST_DOWN_RIGHT_ID])
+		or (down_rays[RAY_CAST_DOWN_RIGHT_ID] and not down_rays[RAY_CAST_DOWN_ID] and not down_rays[RAY_CAST_DOWN_LEFT_ID])
+		then
+			state.current.slope = down_rays[RAY_CAST_DOWN_LEFT_ID] or down_rays[RAY_CAST_DOWN_RIGHT_ID]
+		else
+			state.current.slope = nil
+		end
+		
+		
 		state.current.changed_parent = false
 
 		-- any downward facing ray that hit something?

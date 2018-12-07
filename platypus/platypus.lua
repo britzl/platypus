@@ -263,7 +263,7 @@ function M.create(config)
 					movement.x = -velocity * slope_normal.y
 				else
 					-- moving down - push down
-					movement.y = velocity * slope_normal.x
+					movement.y = -velocity * math.abs(slope_normal.x)
 					movement.x = -velocity * slope_normal.y
 				end
 			else
@@ -282,7 +282,7 @@ function M.create(config)
 				-- moving up or down the slope?
 				if slope_normal.x > 0 then
 					-- moving down
-					movement.y = -velocity * slope_normal.x
+					movement.y = -velocity * math.abs(slope_normal.x)
 					movement.x = velocity * slope_normal.y
 				else
 					-- moving up

@@ -119,6 +119,11 @@ function M.create(config)
 	-- movement based on user input
 	local movement = vmath.vector3()
 
+	local BOUNDS_BOTTOM = vmath.vector3(0, -platypus.collisions.bottom, 0)
+	local BOUNDS_TOP = vmath.vector3(0, platypus.collisions.top, 0)
+	local BOUNDS_LEFT = vmath.vector3(-platypus.collisions.left, 0, 0)
+	local BOUNDS_RIGHT = vmath.vector3(platypus.collisions.right, 0, 0)
+			
 	local RAY_CAST_LEFT_ID = 1
 	local RAY_CAST_RIGHT_ID = 2
 	local RAY_CAST_UP_ID = 3
@@ -128,14 +133,14 @@ function M.create(config)
 	local RAY_CAST_DOWN_LEFT_ID = 7
 	local RAY_CAST_DOWN_RIGHT_ID = 8
 
-	local RAY_CAST_LEFT = vmath.vector3(-platypus.collisions.left - 1, 0, 0)
-	local RAY_CAST_RIGHT = vmath.vector3(platypus.collisions.right + 1, 0, 0)
-	local RAY_CAST_DOWN = vmath.vector3(0, -platypus.collisions.bottom - 1, 0)
-	local RAY_CAST_UP = vmath.vector3(0, platypus.collisions.top + 1, 0)
-	local RAY_CAST_DOWN_LEFT = vmath.vector3(-platypus.collisions.left + 1, -platypus.collisions.bottom - 1, 0)
-	local RAY_CAST_DOWN_RIGHT = vmath.vector3(platypus.collisions.right - 1, -platypus.collisions.bottom - 1, 0)
-	local RAY_CAST_UP_LEFT = vmath.vector3(-platypus.collisions.left + 1, platypus.collisions.top + 1, 0)
-	local RAY_CAST_UP_RIGHT = vmath.vector3(platypus.collisions.right - 1, platypus.collisions.top + 1, 0)
+	local RAY_CAST_LEFT = BOUNDS_LEFT + vmath.vector3(0, -1, 0)
+	local RAY_CAST_RIGHT = BOUNDS_RIGHT + vmath.vector3(0, 1, 0)
+	local RAY_CAST_DOWN = BOUNDS_BOTTOM + vmath.vector3(0, -1, 0)
+	local RAY_CAST_UP = BOUNDS_TOP + vmath.vector3(0, 1, 0)
+	local RAY_CAST_DOWN_LEFT = RAY_CAST_LEFT + RAY_CAST_DOWN
+	local RAY_CAST_DOWN_RIGHT = RAY_CAST_RIGHT + RAY_CAST_DOWN
+	local RAY_CAST_UP_LEFT = RAY_CAST_UP + RAY_CAST_LEFT
+	local RAY_CAST_UP_RIGHT = RAY_CAST_UP + RAY_CAST_RIGHT
 
 	local RAY_CAST_DOWN_FRACTION = vmath.length(vmath.vector3(0, -platypus.collisions.bottom+1, 0)) / vmath.length(RAY_CAST_DOWN)
 
@@ -519,7 +524,7 @@ function M.create(config)
 			if not ok then
 				platypus.parent_id = nil
 				state.current.ground_contact = false
-				go.set_position(go.get_position() + state.current.world_position - state.current.position)
+				go.set_position(go.get_position() + state.current.world_position - state.current.position + BOUNDS_BOTTOM)
 			end
 		end
 

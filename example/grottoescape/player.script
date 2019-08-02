@@ -38,12 +38,13 @@ function init(self)
 				[hash("onewayplatform")] = platypus.DIR_DOWN,
 				[hash("onewaydoor")] = platypus.DIR_LEFT,
 			},
-			left = 7, right = 7, top = 6, bottom = 8,
+			left = 7, right = 7, top = 6, bottom = 8, offset = vmath.vector3(0, 8, 0)
 		},
 		gravity = -800,
 		max_velocity = 580,
 		allow_double_jump = true,
-		allow_wall_jump = true
+		allow_wall_jump = true,
+		--debug = true,
 	})
 	self.current_animation = nil
 	msg.post("@render:", "clear_color", { color = vmath.vector4(0.008, 0.090, 0.129, 1.0) })

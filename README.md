@@ -137,10 +137,11 @@ The `collisions` table can have the following values:
 
 * `separation` (hash) - How to do collision separation. Use platypus.SEPARATION_SHAPES to separate using collision shapes and platypus.SEPARATION_RAYS to separate using ray casts. Default: platypus.SEPARATION_SHAPES
 * `groups` (table) - List with collision groups. Used when separating collisions.
-* `left` (number) - Distance from game object center to left edge of collision shape. Used by ray casts to detect ground and wall contact and when separating collisions using rays.
-* `right` (number) - Distance from game object center to right edge of collision shape. Used by ray casts to detect ground and wall contact and when separating collisions using rays.
-* `top` (number) - Distance from game object center to top edge of collision shape. Used by ray casts to detect ground and wall contact and when separating collisions using rays.
-* `bottom` (number) - Distance from game object center to bottom edge of collision shape. Used by ray casts to detect ground and wall contact and when separating collisions using rays.
+* `left` (number) - Distance from collision shape center to left edge of collision shape. Used by ray casts to detect ground and wall contact and when separating collisions using rays.
+* `right` (number) - Distance from collision shape center to right edge of collision shape. Used by ray casts to detect ground and wall contact and when separating collisions using rays.
+* `top` (number) - Distance from collision shape center to top edge of collision shape. Used by ray casts to detect ground and wall contact and when separating collisions using rays.
+* `bottom` (number) - Distance from collision shape center to bottom edge of collision shape. Used by ray casts to detect ground and wall contact and when separating collisions using rays.
+* `offset` (vector3) - Offset from the game object center to the center of the collision shape. Use this when your sprite and collision shape isn't centered around the game object center. Defaults to (0, 0, 0).
 
 The `groups` table should map collision group hashes as keys to which collision directions to detect collisions with:
 

@@ -62,6 +62,7 @@ function M.create(config)
 	assert(config.collisions.right, "You must provide distance to right edge of collision shape")
 	assert(config.collisions.top, "You must provide distance to top edge of collision shape")
 	assert(config.collisions.bottom, "You must provide distance to bottom edge of collision shape")
+	config.collisions.offset = config.collisions.offset or vmath.vector3(0, 0, 0)
 
 	-- validate configuration
 	for config_key,_ in pairs(config) do
@@ -570,7 +571,7 @@ function M.create(config)
 		msg.post("#", POST_UPDATE)
 
 		-- ray cast left, right and down to detect level geometry
-		local raycast_origin = world_position + distance
+		local raycast_origin = world_position + distance + platypus.collisions.offset
 		ray_cast(RAY_CAST_LEFT_ID, raycast_origin, raycast_origin + RAY_CAST_LEFT)
 		ray_cast(RAY_CAST_RIGHT_ID, raycast_origin, raycast_origin + RAY_CAST_RIGHT)
 		ray_cast(RAY_CAST_UP_ID, raycast_origin, raycast_origin + RAY_CAST_UP)

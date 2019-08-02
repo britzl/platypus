@@ -134,8 +134,8 @@ function M.create(config)
 	local RAY_CAST_DOWN_LEFT_ID = 7
 	local RAY_CAST_DOWN_RIGHT_ID = 8
 
-	local RAY_CAST_LEFT = BOUNDS_LEFT + vmath.vector3(0, -1, 0)
-	local RAY_CAST_RIGHT = BOUNDS_RIGHT + vmath.vector3(0, 1, 0)
+	local RAY_CAST_LEFT = BOUNDS_LEFT + vmath.vector3(-1, 0, 0)
+	local RAY_CAST_RIGHT = BOUNDS_RIGHT + vmath.vector3(1, 0, 0)
 	local RAY_CAST_DOWN = BOUNDS_BOTTOM + vmath.vector3(0, -1, 0)
 	local RAY_CAST_UP = BOUNDS_TOP + vmath.vector3(0, 1, 0)
 	local RAY_CAST_DOWN_LEFT = RAY_CAST_LEFT + RAY_CAST_DOWN

@@ -33,6 +33,7 @@ local ALLOWED_CONFIG_KEYS = {
 	wall_jump_power_ratio_y = true,
 	wall_jump_power_ratio_x = true,
 	allow_wall_jump = true,
+	const_wall_jump = true,
 	allow_double_jump = true,
 	max_velocity = true,
 	gravity = true,
@@ -90,6 +91,7 @@ function M.create(config)
 		wall_jump_power_ratio_x = config.wall_jump_power_ratio_x or 0.35,
 		allow_double_jump = config.allow_double_jump or false,
 		allow_wall_jump = config.allow_wall_jump or false,
+		const_wall_jump = config.const_wall_jump or false,
 		collisions = config.collisions,
 		debug = config.debug,
 	}
@@ -107,7 +109,7 @@ function M.create(config)
 
 	-- track current and previous state to detect state changes
 	local function create_state()
-		return { wall_contact = false, ground_contact = false, rays = {}, down_rays = {} }
+		return { wall_contact = false, wall_jump = false, ground_contact = false, rays = {}, down_rays = {} }
 	end
 	local state = {}
 	state.current = create_state()
@@ -121,7 +123,7 @@ function M.create(config)
 	local BOUNDS_TOP = vmath.vector3(0, platypus.collisions.top, 0)
 	local BOUNDS_LEFT = vmath.vector3(-platypus.collisions.left, 0, 0)
 	local BOUNDS_RIGHT = vmath.vector3(platypus.collisions.right, 0, 0)
-			
+
 	local RAY_CAST_LEFT_ID = 1
 	local RAY_CAST_RIGHT_ID = 2
 	local RAY_CAST_UP_ID = 3
@@ -162,7 +164,7 @@ function M.create(config)
 		return inside[ray.id]
 	end
 
-	
+
 	local function check_group_direction(group, direction)
 		return bit.band(config.collisions.groups[group], direction) > 0
 	end
@@ -259,7 +261,7 @@ function M.create(config)
 					movement.y = -velocity * math.abs(slope_normal.x)
 					movement.x = -velocity * slope_normal.y
 				end
-			else
+			elseif (platypus.const_wall_jump and not state.current.wall_jump) or (not platypus.const_wall_jump) then
 				movement.x = -velocity
 			end
 		end
@@ -283,7 +285,7 @@ function M.create(config)
 					movement.y = -velocity * slope_normal.x * ratio
 					movement.x = velocity * slope_normal.y
 				end
-			else
+			elseif (platypus.const_wall_jump and not state.current.wall_jump) or (not platypus.const_wall_jump) then
 				movement.x = velocity
 			end
 		end
@@ -320,6 +322,8 @@ function M.create(config)
 			platypus.velocity.y = power
 			msg.post("#", M.JUMP)
 		elseif state.current.wall_contact and platypus.allow_wall_jump then
+			state.current.wall_jump = true
+			state.previous.wall_jump = true
 			platypus.velocity.y = power * platypus.wall_jump_power_ratio_y
 			platypus.velocity.x = state.current.wall_contact * power * platypus.wall_jump_power_ratio_x
 			msg.post("#", M.WALL_JUMP)
@@ -353,6 +357,12 @@ function M.create(config)
 		return not state.current.ground_contact and not state.previous.ground_contact and jumping_up()
 	end
 
+	--- Check if this object is jumping from wall
+	-- @return true if jumping from wall
+	function platypus.is_wall_jumping()
+		return state.current.wall_jump and jumping_up()
+	end
+
 	--- Check if this object is falling
 	-- @return true if falling
 	function platypus.is_falling()
@@ -381,7 +391,7 @@ function M.create(config)
 		end
 		return result
 	end
-	
+
 	local down_rays = {}
 	local function raycast_and_handle(raycast_origin)
 		local left = raycast(RAY_CAST_LEFT_ID, raycast_origin, raycast_origin + RAY_CAST_LEFT)
@@ -451,7 +461,7 @@ function M.create(config)
 				end
 				msg.post(".", "set_parent", { parent_id = ray.id })
 				platypus.parent_id = ray.id
-			-- no prior ground contact - landed!
+				-- no prior ground contact - landed!
 			elseif not state.current.ground_contact then
 				-- landed
 				platypus.velocity.y = 0
@@ -465,20 +475,20 @@ function M.create(config)
 				platypus.parent_id = ray.id
 				separate_ray(RAYS[ray.request_id], ray, true)
 			end
-		-- if neither down, down left or down right hit anything this
-		-- frame then we don't have ground contact anymore
+			-- if neither down, down left or down right hit anything this
+			-- frame then we don't have ground contact anymore
 		else
 			state.current.ground_contact = false
 			platypus.parent_id = nil
 			msg.post(".", "set_parent", { parent_id = nil })
 		end
 	end
-	
+
 	--- Call this every frame to update the platformer physics
 	-- @param dt
 	function platypus.update(dt)
 		assert(dt, "You must provide a delta time")
-		
+
 		-- was the ground we're standing on removed?
 		if platypus.parent_id then
 			local ok, _ = pcall(go.get_position, platypus.parent_id)
@@ -492,6 +502,9 @@ function M.create(config)
 		-- apply gravity if not standing on the ground
 		if not state.current.ground_contact then
 			platypus.velocity.y = platypus.velocity.y + platypus.gravity * dt
+		elseif state.current.wall_jump then
+			state.current.wall_jump = false
+			state.previous.wall_jump = false
 		end
 
 		-- update and clamp velocity
@@ -507,7 +520,7 @@ function M.create(config)
 				msg.post("#", M.FALLING)
 			end
 		end
-		
+
 		-- move the game object
 		local distance = (platypus.velocity * dt) + (movement * dt)
 		local position = go.get_position()
@@ -515,7 +528,7 @@ function M.create(config)
 		state.current.position = position
 		state.current.world_position = world_position
 		go.set_position(position + distance)
-		
+
 		-- ray cast left, right and down to detect level geometry
 		local raycast_origin = world_position + distance + platypus.collisions.offset
 		raycast_and_handle(raycast_origin)
@@ -549,7 +562,7 @@ function M.create(config)
 			separate_collision(message)
 		end
 	end
-	
+
 
 	function platypus.toggle_debug()
 		platypus.debug = not platypus.debug

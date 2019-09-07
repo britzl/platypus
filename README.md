@@ -132,6 +132,7 @@ The ```config``` table can have the following values:
 * `wall_jump_power_ratio_y` (number) - Amount to multiply the jump power with when applying vertical velocity during a wall jump (OPTIONAL)
 * `allow_double_jump` (boolean) - If double jumps are allowed
 * `allow_wall_jump` (boolean) - If wall jumps are allowed
+* `const_wall_jump` (boolean) - If true - prevents user from changing velocity while bounced from a wall. Set to false by default, to keep legacy behavior.
 
 The `collisions` table can have the following values:
 
@@ -256,6 +257,12 @@ Check if the game object is jumping. The game object is considered falling if no
 
 **RETURN**
 * `jumping` (boolean) - True if jumping
+
+### instance.is_wall_jumping()
+Check if the game object is jumping after a bounce from a wall. The game object is considered falling if not having ground contact and velocity is pointing up.
+
+**RETURN**
+* `wall_jump` (boolean) - True if jumping after a bounce from a wall.
 
 
 ### instance.toggle_debug()

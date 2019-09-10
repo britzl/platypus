@@ -532,11 +532,11 @@ function M.create(config)
 			end
 		end
 
-		-- apply wall slide velocity
+		-- apply wall slide gravity
 		if state.current.wall_slide then
 			platypus.velocity.y = platypus.velocity.y + platypus.wall_slide_gravity * dt
 
-			-- apply gravity if not standing on the ground
+                -- apply gravity if not standing on the ground
 		elseif not state.current.ground_contact then
 			platypus.velocity.y = platypus.velocity.y + platypus.gravity * dt
 		end

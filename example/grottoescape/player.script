@@ -38,12 +38,14 @@ function init(self)
 				[hash("onewayplatform")] = platypus.DIR_DOWN,
 				[hash("onewaydoor")] = platypus.DIR_LEFT,
 			},
-			left = 7, right = 7, top = 6, bottom = 8, offset = vmath.vector3(0, 8, 0)
+			left = 7, right = 7, top = 7, bottom = 7, offset = vmath.vector3(0, 7, 0)
 		},
 		gravity = -800,
 		max_velocity = 580,
 		allow_double_jump = true,
 		allow_wall_jump = true,
+		allow_wall_slide = true,
+		wall_slide_gravity = -50
 		--debug = true,
 	})
 	self.current_animation = nil
@@ -61,6 +63,7 @@ function update(self, dt)
 		play_animation(self, ground_contact and ANIM_RUN or ANIM_JUMP)
 		sprite.set_hflip("#sprite", false)
 	else
+		self.platypus.abort_wall_slide()
 		play_animation(self, ground_contact and ANIM_IDLE or ANIM_JUMP)
 	end
 	self.platypus.update(dt)

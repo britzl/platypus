@@ -297,7 +297,7 @@ function M.create(config)
 			elseif (platypus.const_wall_jump and not state.current.wall_jump) or (not platypus.const_wall_jump) then
 				movement.x = velocity
 			end
-		elseif state.current.wall_contact ~= 1 and platypus.allow_wall_slide and platypus.is_falling() and not state.current.wall_slide then	-- (and pushes on the wall)
+		elseif state.current.wall_contact ~= 1 and platypus.allow_wall_slide and platypus.is_falling() and not state.current.wall_slide then
 			state.current.wall_slide = true
 			state.previous.wall_slide = true
 			msg.post("#", M.WALL_SLIDE)			-- notify about starting wall slide
@@ -335,7 +335,7 @@ function M.create(config)
 	end
 
 	--- Try to make the game object jump.
-	-- @param power The power of the jump (ie how high)x`
+	-- @param power The power of the jump (ie how high)
 	function platypus.jump(power)
 		assert(power, "You must provide a jump takeoff power")
 		if state.current.ground_contact then

@@ -79,6 +79,15 @@ Use `platypus.jump()` to perform a jump and `platypus.abort_jump()` to reduce th
 			end
 		end
 	end
+    
+## Double jump, wall jump and wall slide
+Platypus supports double jumps when config.allow_double_jump is set to true. Then, it occurs automatically, when used jump() while already jumped up.
+
+Platypus supports wall jumps when config.allow_wall_jump is set to true. Then, it occurs automatically, when used jump() while having a wall_contact.
+Normally, user can alter your movement right after bounced from a wall, but when you set config.const_wall_jump - the bounce will be always the same and user won't be able to alter it.
+
+Platypus supports wall slide when config.allow_wall_slide is set to true. Then, it occurs automatically, when pushing toward a wall, while falling down. Platypus offers also to abort_wall_slide(), for example, when the control key is released, so user is no longer pushing toward the wall.
+
 
 ## Collision detection
 Platypus uses either collision shapes or ray casts to detect collisions (configured when creating a Platypus instance). In both cases ray casts are used to detect wall and ground contact.
@@ -108,6 +117,8 @@ Platypus will send messages for certain state changes so that scripts can react,
 			print("Doing a double jump!")
 		elseif message_id == platypus.JUMP then
 			print("Jumping!")
+        elseif message_id == platypus.WALL_SLIDE then
+			print("Sliding down a wall!")
 		end
 	end
 
@@ -134,7 +145,7 @@ The ```config``` table can have the following values:
 * `allow_wall_jump` (boolean) - If wall jumps are allowed (OPTIONAL)
 * `const_wall_jump` (boolean) - If true - prevents user from changing velocity while bounced from a wall. Set to false by default, to keep legacy behavior. (OPTIONAL)
 * `allow_wall_slide` (boolean) - If true - wall slide is allowed (by pushing forward on a wall while falling) (OPTIONAL)
-* `wall_slide_velocity` (boolean) - "gravity" that applies when sliding down the wall (generally should be lower than overall gravity, to simulate sliding) (OPTIONAL)
+* `wall_slide_velocity` (number) - "gravity" that applies when sliding down the wall (generally should be lower than overall gravity, to simulate sliding) (OPTIONAL)
 
 The `collisions` table can have the following values:
 

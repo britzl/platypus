@@ -537,10 +537,7 @@ function M.create(config)
 
 		-- reset wall slide and wall jump when standing on the ground
 		if state.current.ground_contact then
-			if state.current.wall_slide then
-				state.current.wall_slide = false
-				state.previous.wall_slide = false
-			end
+			platypus.abort_wall_slide()
 			if state.current.wall_jump then
 				state.current.wall_jump = false
 				state.previous.wall_jump = false
@@ -579,9 +576,8 @@ function M.create(config)
 		end
 
 		-- abort wall slide when lost contact with the wall while sliding
-		if not state.current.wall_contact and state.current.wall_slide then
-			state.current.wall_slide = false
-			state.previous.wall_slide = false
+		if not state.current.wall_contact then
+			platypus.abort_wall_slide()
 		end
 
 		-- notify ground or air state change

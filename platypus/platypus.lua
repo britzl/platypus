@@ -346,11 +346,7 @@ function M.create(config)
 		elseif state.current.wall_contact and platypus.allow_wall_jump then
 			state.current.wall_jump = true
 			state.previous.wall_jump = true
-			-- abort wall sliding when jumping from wall
-			if state.current.wall_slide then
-				state.current.wall_slide = false
-				state.previous.wall_slide = false
-			end
+			platypus.abort_wall_slide()		-- abort wall sliding when jumping from wall
 			platypus.velocity.y = power * platypus.wall_jump_power_ratio_y
 			platypus.velocity.x = state.current.wall_contact * power * platypus.wall_jump_power_ratio_x
 			msg.post("#", M.WALL_JUMP)
@@ -532,11 +528,9 @@ function M.create(config)
 			end
 		end
 
-		-- apply wall slide gravity
+		-- apply wall slide gravity or normal gravity if not standing on the ground
 		if state.current.wall_slide then
 			platypus.velocity.y = platypus.velocity.y + platypus.wall_slide_gravity * dt
-
-                -- apply gravity if not standing on the ground
 		elseif not state.current.ground_contact then
 			platypus.velocity.y = platypus.velocity.y + platypus.gravity * dt
 		end

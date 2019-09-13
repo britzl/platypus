@@ -79,6 +79,15 @@ Use `platypus.jump()` to perform a jump and `platypus.abort_jump()` to reduce th
 			end
 		end
 	end
+    
+## Double jump, wall jump and wall slide
+Platypus supports double jumps when config.allow_double_jump is set to true. A double jump is performed automatically when a second jump is done before and up until reaching the apex of the first jump. It is not possible to perform a double jump when falling
+
+Platypus supports wall jumps when config.allow_wall_jump is set to true. A wall jump is performed automatically when jumping while having wall contact while falling or wall sliding. The wall jump pushes the player out from the wall in question.
+Normally, user can alter your movement right after bounced from a wall, but when you set config.const_wall_jump - the bounce will be always the same and user won't be able to alter it.
+
+Platypus supports wall slide when config.allow_wall_slide is set to true. A wall slide will be performed automatically when the player has wall contact while falling and moving (using platypus.left() or platypus.right()) in the direction of the wall. Platypus offers also to abort_wall_slide(), for example, when the control key is released, so user is no longer pushing toward the wall.
+
 
 ## Collision detection
 Platypus uses either collision shapes or ray casts to detect collisions (configured when creating a Platypus instance). In both cases ray casts are used to detect wall and ground contact.
@@ -108,6 +117,8 @@ Platypus will send messages for certain state changes so that scripts can react,
 			print("Doing a double jump!")
 		elseif message_id == platypus.JUMP then
 			print("Jumping!")
+        elseif message_id == platypus.WALL_SLIDE then
+			print("Sliding down a wall!")
 		end
 	end
 
@@ -130,9 +141,11 @@ The ```config``` table can have the following values:
 * `max_velocity` (number) - Maximum velocity of the game object (pixels/s). Set this to limit speed and prevent full penetration of game object into level geometry (OPTIONAL)
 * `wall_jump_power_ratio_x` (number) - Amount to multiply the jump power with when applying horizontal velocity during a wall jump (OPTIONAL)
 * `wall_jump_power_ratio_y` (number) - Amount to multiply the jump power with when applying vertical velocity during a wall jump (OPTIONAL)
-* `allow_double_jump` (boolean) - If double jumps are allowed
-* `allow_wall_jump` (boolean) - If wall jumps are allowed
-* `const_wall_jump` (boolean) - If true - prevents user from changing velocity while bounced from a wall. Set to false by default, to keep legacy behavior.
+* `allow_double_jump` (boolean) - If double jumps are allowed (OPTIONAL)
+* `allow_wall_jump` (boolean) - If wall jumps are allowed (OPTIONAL)
+* `const_wall_jump` (boolean) - If true - prevents user from changing velocity while bounced from a wall. Set to false by default, to keep legacy behavior. (OPTIONAL)
+* `allow_wall_slide` (boolean) - If true - wall slide is allowed (by pushing forward on a wall while falling) (OPTIONAL)
+* `wall_slide_velocity` (number) - "gravity" that applies when sliding down the wall (generally should be lower than overall gravity, to simulate sliding) (OPTIONAL)
 
 The `collisions` table can have the following values:
 
@@ -218,17 +231,23 @@ Make the game object perform a jump. Depending on state and configuration, this 
 **PARAMETERS**
 * `power` (number) - Initial takeoff speed (pixels/s)
 
+
 ### instance.force_jump(power)
 Make the game object perform a jump, regardless of current state.
 
 **PARAMETERS**
 * `power` (number) - Initial takeoff speed (pixels/s)
 
+
 ### instance.abort_jump(reduction)
 Abort a jump by "cutting it short". This will reduce the vertical speed by some fraction.
 
 **PARAMETERS**
 * `reduction` (number) - Amount to multiply vertical velocity with
+
+
+### instance.abort_wall_slide()
+Abort a slide down a wall (could be used when releasing the pushing control key)
 
 
 ### instance.has_ground_contact()
@@ -258,11 +277,19 @@ Check if the game object is jumping. The game object is considered falling if no
 **RETURN**
 * `jumping` (boolean) - True if jumping
 
+
 ### instance.is_wall_jumping()
 Check if the game object is jumping after a bounce from a wall. The game object is considered falling if not having ground contact and velocity is pointing up.
 
 **RETURN**
 * `wall_jump` (boolean) - True if jumping after a bounce from a wall.
+
+
+### instance.is_wall_sliding()
+Check if the game object is sliding down a wall.
+
+**RETURN**
+* `wall_slide` (boolean) - True if sliding down a wall.
 
 
 ### instance.toggle_debug()
@@ -288,6 +315,9 @@ Sent when the game object performs a wall jump
 
 ### platypus.DOUBLE_JUMP
 Sent when the game object performs a double jump
+
+### platypus.WALL_SLIDE
+Sent when the game object starts sliding down a wall
 
 
 ## Constants

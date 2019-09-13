@@ -21,6 +21,7 @@ M.FALLING = hash("platypus_falling")
 M.GROUND_CONTACT = hash("platypus_ground_contact")
 M.WALL_CONTACT = hash("platypus_wall_contact")
 M.WALL_JUMP = hash("platypus_wall_jump")
+M.WALL_SLIDE = hash("platypus_wall_slide")
 M.DOUBLE_JUMP = hash("platypus_double_jump")
 M.JUMP = hash("platypus_jump")
 
@@ -35,6 +36,8 @@ local ALLOWED_CONFIG_KEYS = {
 	allow_wall_jump = true,
 	const_wall_jump = true,
 	allow_double_jump = true,
+	allow_wall_slide = true,
+	wall_slide_gravity = true,
 	max_velocity = true,
 	gravity = true,
 	debug = true,
@@ -92,6 +95,8 @@ function M.create(config)
 		allow_double_jump = config.allow_double_jump or false,
 		allow_wall_jump = config.allow_wall_jump or false,
 		const_wall_jump = config.const_wall_jump or false,
+		allow_wall_slide = config.allow_wall_slide or false,
+		wall_slide_gravity = config.wall_slide_gravity or -50,
 		collisions = config.collisions,
 		debug = config.debug,
 	}
@@ -109,12 +114,11 @@ function M.create(config)
 
 	-- track current and previous state to detect state changes
 	local function create_state()
-		return { wall_contact = false, wall_jump = false, ground_contact = false, rays = {}, down_rays = {} }
+		return { wall_contact = false, wall_jump = false, wall_slide = false, ground_contact = false, rays = {}, down_rays = {} }
 	end
 	local state = {}
 	state.current = create_state()
 	state.previous = create_state()
-
 
 	-- movement based on user input
 	local movement = vmath.vector3()
@@ -264,6 +268,11 @@ function M.create(config)
 			elseif (platypus.const_wall_jump and not state.current.wall_jump) or (not platypus.const_wall_jump) then
 				movement.x = -velocity
 			end
+		elseif state.current.wall_contact ~= -1 and platypus.allow_wall_slide and platypus.is_falling() and not state.current.wall_slide then
+			state.current.wall_slide = true
+			state.previous.wall_slide = true
+			msg.post("#", M.WALL_SLIDE)			-- notify about starting wall slide
+			platypus.velocity.y = 0				-- reduce vertical speed
 		end
 	end
 
@@ -288,6 +297,11 @@ function M.create(config)
 			elseif (platypus.const_wall_jump and not state.current.wall_jump) or (not platypus.const_wall_jump) then
 				movement.x = velocity
 			end
+		elseif state.current.wall_contact ~= 1 and platypus.allow_wall_slide and platypus.is_falling() and not state.current.wall_slide then
+			state.current.wall_slide = true
+			state.previous.wall_slide = true
+			msg.post("#", M.WALL_SLIDE)			-- notify about starting wall slide
+			platypus.velocity.y = 0				-- reduce vertical speed
 		end
 	end
 
@@ -312,6 +326,14 @@ function M.create(config)
 		movement = velocity
 	end
 
+	--- Abort a wall slide
+	function platypus.abort_wall_slide()
+		if state.current.wall_slide then
+			state.current.wall_slide = false
+			state.previous.wall_slide = false
+		end
+	end
+
 	--- Try to make the game object jump.
 	-- @param power The power of the jump (ie how high)
 	function platypus.jump(power)
@@ -324,6 +346,7 @@ function M.create(config)
 		elseif state.current.wall_contact and platypus.allow_wall_jump then
 			state.current.wall_jump = true
 			state.previous.wall_jump = true
+			platypus.abort_wall_slide()		-- abort wall sliding when jumping from wall
 			platypus.velocity.y = power * platypus.wall_jump_power_ratio_y
 			platypus.velocity.x = state.current.wall_contact * power * platypus.wall_jump_power_ratio_x
 			msg.post("#", M.WALL_JUMP)
@@ -361,6 +384,12 @@ function M.create(config)
 	-- @return true if jumping from wall
 	function platypus.is_wall_jumping()
 		return state.current.wall_jump and jumping_up()
+	end
+
+	--- Check if this object is sliding on a wall
+	-- @return true if sliding on a wall
+	function platypus.is_wall_sliding()
+		return state.current.wall_slide
 	end
 
 	--- Check if this object is falling
@@ -499,12 +528,20 @@ function M.create(config)
 			end
 		end
 
-		-- apply gravity if not standing on the ground
-		if not state.current.ground_contact then
+		-- apply wall slide gravity or normal gravity if not standing on the ground
+		if state.current.wall_slide then
+			platypus.velocity.y = platypus.velocity.y + platypus.wall_slide_gravity * dt
+		elseif not state.current.ground_contact then
 			platypus.velocity.y = platypus.velocity.y + platypus.gravity * dt
-		elseif state.current.wall_jump then
-			state.current.wall_jump = false
-			state.previous.wall_jump = false
+		end
+
+		-- reset wall slide and wall jump when standing on the ground
+		if state.current.ground_contact then
+			platypus.abort_wall_slide()
+			if state.current.wall_jump then
+				state.current.wall_jump = false
+				state.previous.wall_jump = false
+			end
 		end
 
 		-- update and clamp velocity
@@ -536,6 +573,11 @@ function M.create(config)
 		-- notify wall contact state change
 		if state.current.wall_contact and not state.previous.wall_contact then
 			msg.post("#", M.WALL_CONTACT)
+		end
+
+		-- abort wall slide when lost contact with the wall while sliding
+		if not state.current.wall_contact then
+			platypus.abort_wall_slide()
 		end
 
 		-- notify ground or air state change

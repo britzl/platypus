@@ -43,3 +43,6 @@ package = com.britzl.defold.platypus
 [osx]
 bundle_identifier = com.britzl.defold.platypus
 
+[tilemap]
+max_tile_count = 4096
+

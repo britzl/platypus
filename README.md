@@ -81,12 +81,12 @@ Use `platypus.jump()` to perform a jump and `platypus.abort_jump()` to reduce th
 	end
     
 ## Double jump, wall jump and wall slide
-Platypus supports double jumps when config.allow_double_jump is set to true. Then, it occurs automatically, when used jump() while already jumped up.
+Platypus supports double jumps when config.allow_double_jump is set to true. A double jump is performed automatically when a second jump is done before and up until reaching the apex of the first jump. It is not possible to perform a double jump when falling
 
-Platypus supports wall jumps when config.allow_wall_jump is set to true. Then, it occurs automatically, when used jump() while having a wall_contact.
+Platypus supports wall jumps when config.allow_wall_jump is set to true. A wall jump is performed automatically when jumping while having wall contact while falling or wall sliding. The wall jump pushes the player out from the wall in question.
 Normally, user can alter your movement right after bounced from a wall, but when you set config.const_wall_jump - the bounce will be always the same and user won't be able to alter it.
 
-Platypus supports wall slide when config.allow_wall_slide is set to true. Then, it occurs automatically, when pushing toward a wall, while falling down. Platypus offers also to abort_wall_slide(), for example, when the control key is released, so user is no longer pushing toward the wall.
+Platypus supports wall slide when config.allow_wall_slide is set to true. A wall slide will be performed automatically when the player has wall contact while falling and moving (using platypus.left() or platypus.right()) in the direction of the wall. Platypus offers also to abort_wall_slide(), for example, when the control key is released, so user is no longer pushing toward the wall.
 
 
 ## Collision detection

@@ -1,15 +1,15 @@
 [project]
 title = Platypus
 version = 0
-dependencies = https://github.com/britzl/defold-input/archive/0.9.zip,https://github.com/britzl/defold-orthographic/archive/2.2.5.zip
+dependencies = https://github.com/britzl/defold-orthographic/archive/2.2.5.zip
 
 [bootstrap]
 main_collection = /example/grottoescape/grottoescape.collectionc
 render = /orthographic/render/orthographic.renderc
 
 [input]
-game_binding = /in/bindings/all.input_bindingc
-gamepads = /in/gamepads/in.gamepadsc
+gamepads = /builtins/input/default.gamepadsc
+use_accelerometer = 0
 
 [display]
 width = 1280

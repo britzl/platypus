@@ -474,7 +474,9 @@ function M.create(config)
 		end
 
 		-- any downward facing ray that hit something?
-		if next(down_rays) then
+		-- only consider this if not moving up (for instance when jumping
+		-- through a one way platform)
+		if next(down_rays) and platypus.velocity.y <= 0 then
 			-- on ground - check for change of parent
 			if state.current.ground_contact then
 				-- exit if any of the rays have the same parent as the current one

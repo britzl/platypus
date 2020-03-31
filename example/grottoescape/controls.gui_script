@@ -1,0 +1,23 @@
+local onscreen = require "in.onscreen"
+
+local function on_control(action, node, control)
+	if action == onscreen.BUTTON then
+		msg.post("player", "onscreen", control)
+	end
+end
+
+function init(self)
+	msg.post(".", "acquire_input_focus")
+	onscreen.register_button(gui.get_node("left"), nil, on_control)
+	onscreen.register_button(gui.get_node("right"), nil, on_control)
+	onscreen.register_button(gui.get_node("jump"), nil, on_control)
+end
+
+function final(self)
+	onscreen.reset()
+end
+
+function on_input(self, action_id, action)
+	print(action_id)
+	onscreen.on_input(action_id, action)
+end

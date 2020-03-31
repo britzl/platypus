@@ -1,7 +1,7 @@
 [project]
 title = Platypus
 version = 0
-dependencies = https://github.com/britzl/defold-orthographic/archive/2.2.5.zip
+dependencies = https://github.com/britzl/defold-orthographic/archive/2.2.5.zip,https://github.com/britzl/defold-input/archive/2.8.1.zip
 
 [bootstrap]
 main_collection = /example/grottoescape/grottoescape.collectionc

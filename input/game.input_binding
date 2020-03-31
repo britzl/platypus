@@ -18,3 +18,11 @@ key_trigger {
   input: KEY_2
   action: "toggle_debug"
 }
+key_trigger {
+  input: KEY_3
+  action: "flip_gravity"
+}
+mouse_trigger {
+  input: MOUSE_BUTTON_LEFT
+  action: "touch"
+}

@@ -63,20 +63,8 @@ function update(self, dt)
 	self.platypus.update(dt)
 end
 
-function on_message(self, message_id, message, sender)
-	self.platypus.on_message(message_id, message, sender)
-	if message_id == platypus.GROUND_CONTACT then
-		print("Ground contact")
-	elseif message_id == platypus.WALL_CONTACT then
-		print("Wall contact")
-	elseif message_id == platypus.FALLING then
-		print("Falling")
-	elseif message_id == platypus.WALL_JUMP then
-		sprite.set_hflip("#sprite", self.platypus.velocity.x < 0)
-	end
-end
 
-function on_input(self, action_id, action)
+local function handle_action(self, action_id, action)
 	if not action_id then return end
 	if action.pressed then
 		self.input_state[action_id] = true
@@ -101,6 +89,32 @@ function on_input(self, action_id, action)
 		self.platypus.toggle_debug()
 		msg.post("@system:", "toggle_physics_debug")
 	end
+end
+
+
+function on_message(self, message_id, message, sender)
+	self.platypus.on_message(message_id, message, sender)
+	if message_id == platypus.GROUND_CONTACT then
+		print("Ground contact")
+	elseif message_id == platypus.WALL_CONTACT then
+		print("Wall contact")
+	elseif message_id == platypus.FALLING then
+		print("Falling")
+	elseif message_id == platypus.WALL_JUMP then
+		sprite.set_hflip("#sprite", self.platypus.velocity.x < 0)
+	elseif message_id == hash("onscreen") then
+		if message.id == hash("left") then
+			handle_action(self, LEFT, message)
+		elseif message.id == hash("right") then
+			handle_action(self, RIGHT, message)
+		elseif message.id == hash("jump") then
+			handle_action(self, JUMP, message)
+		end
+	end
+end
+
+function on_input(self, action_id, action)
+	handle_action(self, action_id, action)
 end
 
 function on_reload(self)

@@ -26,3 +26,7 @@ mouse_trigger {
   input: MOUSE_BUTTON_LEFT
   action: "touch"
 }
+touch_trigger {
+  input: TOUCH_MULTI
+  action: "multitouch"
+}

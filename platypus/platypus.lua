@@ -488,7 +488,7 @@ function M.create(config)
 				-- get the new parent from any of the rays in the list
 				local ray = down_rays[next(down_rays)]
 				if ray.fraction < 0.8 then
-					separate_ray(RAYS[ray.request_id], ray, true)
+					separate_ray(RAYS[ray.request_id], ray)
 				end
 				msg.post(".", "set_parent", { parent_id = ray.id })
 				platypus.parent_id = ray.id
@@ -504,7 +504,7 @@ function M.create(config)
 				local ray = down_rays[next(down_rays)]
 				msg.post(".", "set_parent", { parent_id = ray.id })
 				platypus.parent_id = ray.id
-				separate_ray(RAYS[ray.request_id], ray, true)
+				separate_ray(RAYS[ray.request_id], ray)
 			end
 			-- if neither down, down left or down right hit anything this
 			-- frame then we don't have ground contact anymore

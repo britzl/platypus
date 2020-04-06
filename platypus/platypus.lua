@@ -227,9 +227,9 @@ function M.create(config)
 
 			-- don't push out from platforms
 			if not check_up and message.normal.y > 0 then
-				message.normal.y = 0
+				--message.normal.y = 0
 			elseif not check_down and message.normal.y < 0 then
-				message.normal.y = 0
+				--message.normal.y = 0
 			end
 
 			-- separate collision objects

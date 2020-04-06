@@ -18,6 +18,5 @@ function final(self)
 end
 
 function on_input(self, action_id, action)
-	print(action_id)
 	onscreen.on_input(action_id, action)
 end

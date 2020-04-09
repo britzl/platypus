@@ -227,9 +227,9 @@ function M.create(config)
 
 			-- don't push out from platforms
 			if not check_up and message.normal.y > 0 then
-				--message.normal.y = 0
+				message.normal.y = 0
 			elseif not check_down and message.normal.y < 0 then
-				--message.normal.y = 0
+				message.normal.y = 0
 			end
 
 			-- separate collision objects
@@ -421,7 +421,6 @@ function M.create(config)
 		return result
 	end
 
-	local down_rays = {}
 	local function raycast_and_handle(raycast_origin)
 		local left = raycast(RAY_CAST_LEFT_ID, raycast_origin, raycast_origin + RAY_CAST_LEFT)
 		local right = raycast(RAY_CAST_RIGHT_ID, raycast_origin, raycast_origin + RAY_CAST_RIGHT)
@@ -460,6 +459,7 @@ function M.create(config)
 		end
 
 		-- build map of downward facing rays that hit something we care about
+		local down_rays = state.current.down_rays
 		down_rays[RAY_CAST_DOWN_ID] = (down and down.normal.y > 0.7 and check_group_direction(down.group, M.DIR_DOWN)) and down or nil
 		down_rays[RAY_CAST_DOWN_LEFT_ID] = (down_left and down_left.normal.y > 0.7 and check_group_direction(down_left.group, M.DIR_DOWN)) and down_left or nil
 		down_rays[RAY_CAST_DOWN_RIGHT_ID] = (down_right and down_right.normal.y > 0.7 and check_group_direction(down_right.group, M.DIR_DOWN)) and down_right or nil
@@ -477,37 +477,42 @@ function M.create(config)
 		-- only consider this if not moving up (for instance when jumping
 		-- through a one way platform)
 		if next(down_rays) and platypus.velocity.y <= 0 then
-			-- on ground - check for change of parent
-			if state.current.ground_contact then
-				-- exit if any of the rays have the same parent as the current one
-				for _,ray in pairs(down_rays) do
-					if platypus.parent_id == ray.id then
-						return
-					end
-				end
-				-- get the new parent from any of the rays in the list
-				local ray = down_rays[next(down_rays)]
-				if ray.fraction < 0.8 then
-					separate_ray(RAYS[ray.request_id], ray)
-				end
-				msg.post(".", "set_parent", { parent_id = ray.id })
-				platypus.parent_id = ray.id
-				-- no prior ground contact - landed!
-			elseif not state.current.ground_contact then
-				-- landed
-				platypus.velocity.y = 0
-				state.current.falling = false
-				state.current.ground_contact = true
-				state.current.double_jumping = false
+			local ray = down_rays[next(down_rays)]
 
-				-- get one ray that hit and separate based on
+			-- on ground - keep them separated!
+			if state.current.ground_contact then
+				state.current.falling = false
+				state.previous.ground_contact = true
+				
+				if ray.fraction < 0.8 then
+					separate_ray(RAYS[ray.request_id], ray, true)
+				end
+			-- no prior ground contact - landed!
+			elseif not state.current.ground_contact then
 				local ray = down_rays[next(down_rays)]
+				local previous_down = state.previous.down_rays[RAY_CAST_DOWN_ID]
+				local previous_down_left = state.previous.down_rays[RAY_CAST_DOWN_ID]
+				local previous_down_right = state.previous.down_rays[RAY_CAST_DOWN_ID]
+				local no_previous_down = not previous_down and not previous_down_left and not previous_down_right
+				if state.current.falling and no_previous_down then
+					-- landed
+					platypus.velocity.x = 0
+					state.current.falling = false
+					state.current.ground_contact = true
+					state.previous.ground_contact = true
+					state.current.double_jumping = false
+					-- separation
+					separate_ray(RAYS[ray.request_id], ray, true)
+				end
+			end
+
+			-- change parent if needed
+			if platypus.parent_id ~= ray.id then
 				msg.post(".", "set_parent", { parent_id = ray.id })
 				platypus.parent_id = ray.id
-				separate_ray(RAYS[ray.request_id], ray)
 			end
-			-- if neither down, down left or down right hit anything this
-			-- frame then we don't have ground contact anymore
+		-- if neither down, down left or down right hit anything this
+		-- frame then we don't have ground contact anymore
 		else
 			state.current.ground_contact = false
 			platypus.parent_id = nil
@@ -544,6 +549,14 @@ function M.create(config)
 				state.current.wall_jump = false
 				state.previous.wall_jump = false
 			end
+		end
+
+		-- gradually reduce speed over the course of a few frames when
+		-- in ground contact.
+		-- this will prevent bounciness when landing and setting the
+		-- velocity to 0 from one frame to another
+		if state.current.ground_contact then
+			platypus.velocity.y = platypus.velocity.y * 0.5
 		end
 
 		-- update and clamp velocity
@@ -583,12 +596,10 @@ function M.create(config)
 		end
 
 		-- notify ground or air state change
-		if state.current.ground_contact and not state.previous.ground_contact then
-			platypus.velocity.x = 0
-			platypus.velocity.y = 0
+		if state.previous.falling and not state.current.falling then
 			msg.post("#", M.GROUND_CONTACT)
 		end
-
+		
 		-- reset transient state
 		movement.x = 0
 		movement.y = 0

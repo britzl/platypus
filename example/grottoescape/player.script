@@ -25,7 +25,6 @@ function init(self)
 	self.platypus = platypus.create({
 		collisions = {
 			separation = platypus.SEPARATION_RAYS,
-			--separation = platypus.SEPARATION_SHAPES,
 			groups = {
 				[hash("ground")] = platypus.DIR_ALL,
 				--[hash("onewayplatform")] = platypus.DIR_ALL,
@@ -35,7 +34,7 @@ function init(self)
 			left = 7, right = 7, top = 7, bottom = 6, offset = vmath.vector3(0, 7, 0)
 		},
 		gravity = -800,
-		max_velocity = 400,
+		max_velocity = 300,
 		allow_double_jump = true,
 		allow_wall_jump = true,
 		allow_wall_slide = true,

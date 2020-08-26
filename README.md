@@ -79,7 +79,7 @@ Use `platypus.jump()` to perform a jump and `platypus.abort_jump()` to reduce th
 			end
 		end
 	end
-    
+
 ## Double jump, wall jump and wall slide
 Platypus supports double jumps when config.allow_double_jump is set to true. A double jump is performed automatically when a second jump is done before and up until reaching the apex of the first jump. It is not possible to perform a double jump when falling
 
@@ -90,7 +90,7 @@ Platypus supports wall slide when config.allow_wall_slide is set to true. A wall
 
 
 ## Collision detection
-Platypus uses either collision shapes or ray casts to detect collisions (configured when creating a Platypus instance). In both cases ray casts are used to detect wall and ground contact.
+Platypus uses ray casts to detect collisions (configured when creating a Platypus instance).
 
 ## State changes
 Platypus will send messages for certain state changes so that scripts can react, for instance by changing animation.
@@ -149,13 +149,12 @@ The ```config``` table can have the following values:
 
 The `collisions` table can have the following values:
 
-* `separation` (hash) - How to do collision separation. Use platypus.SEPARATION_SHAPES to separate using collision shapes and platypus.SEPARATION_RAYS to separate using ray casts. Default: platypus.SEPARATION_SHAPES
 * `groups` (table) - List with collision groups. Used when separating collisions.
-* `left` (number) - Distance from collision shape center to left edge of collision shape. Used by ray casts to detect ground and wall contact and when separating collisions using rays.
-* `right` (number) - Distance from collision shape center to right edge of collision shape. Used by ray casts to detect ground and wall contact and when separating collisions using rays.
-* `top` (number) - Distance from collision shape center to top edge of collision shape. Used by ray casts to detect ground and wall contact and when separating collisions using rays.
-* `bottom` (number) - Distance from collision shape center to bottom edge of collision shape. Used by ray casts to detect ground and wall contact and when separating collisions using rays.
-* `offset` (vector3) - Offset from the game object center to the center of the collision shape. Use this when your sprite and collision shape isn't centered around the game object center. Defaults to (0, 0, 0).
+* `left` (number) - Distance from game object center to left edge of collision area. Used by ray casts to detect ground and wall contact and when separating collisions using rays.
+* `right` (number) - Distance from game object center to right edge of collision area. Used by ray casts to detect ground and wall contact and when separating collisions using rays.
+* `top` (number) - Distance from game object center to top edge of collision area. Used by ray casts to detect ground and wall contact and when separating collisions using rays.
+* `bottom` (number) - Distance from game object center to bottom edge of collision area. Used by ray casts to detect ground and wall contact and when separating collisions using rays.
+* `offset` (vector3) - Offset from the game object center to the center of the collision area. Use this when your sprite and collision area isn't centered around the game object center. Defaults to (0, 0, 0).
 
 The `groups` table should map collision group hashes as keys to which collision directions to detect collisions with:
 
@@ -318,15 +317,6 @@ Sent when the game object performs a double jump
 
 ### platypus.WALL_SLIDE
 Sent when the game object starts sliding down a wall
-
-
-## Constants
-
-### platypus.SEPARATION_SHAPES
-Configuration value to indicate that collision separation should be done using collision shapes.
-
-### platypus.SEPARATION_RAYS
-Configuration value to indicate that collision separation should be done using ray casts.
 
 
 # Credits

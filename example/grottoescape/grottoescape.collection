@@ -374,8 +374,8 @@ instances {
   rotation {
     x: 0.0
     y: 0.0
-    z: -0.16159621
-    w: 0.98685694
+    z: -0.19509032
+    w: 0.98078525
   }
   component_properties {
     id: "script"
@@ -395,15 +395,15 @@ instances {
   id: "platform4"
   prototype: "/example/grottoescape/moving_platform/moving_platform.go"
   position {
-    x: 215.0
-    y: 276.0
+    x: 210.0
+    y: 269.0
     z: 0.0
   }
   rotation {
     x: 0.0
     y: 0.0
-    z: 0.31042787
-    w: 0.9505969
+    z: 0.19509032
+    w: 0.98078525
   }
   component_properties {
     id: "script"

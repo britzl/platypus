@@ -24,23 +24,22 @@ function init(self)
 	self.input_state = {}
 	self.platypus = platypus.create({
 		collisions = {
-			--separation = platypus.SEPARATION_RAYS,
-			separation = platypus.SEPARATION_SHAPES,
+			separation = platypus.SEPARATION_RAYS,
 			groups = {
 				[hash("ground")] = platypus.DIR_ALL,
 				--[hash("onewayplatform")] = platypus.DIR_ALL,
 				[hash("onewayplatform")] = platypus.DIR_DOWN,
 				[hash("onewaydoor")] = platypus.DIR_LEFT,
 			},
-			left = 7, right = 7, top = 7, bottom = 7, offset = vmath.vector3(0, 7, 0)
+			left = 7, right = 7, top = 7, bottom = 6, offset = vmath.vector3(0, 7, 0)
 		},
 		gravity = -800,
-		max_velocity = 580,
+		max_velocity = 300,
 		allow_double_jump = true,
 		allow_wall_jump = true,
 		allow_wall_slide = true,
-		wall_slide_gravity = -50
-		--debug = true,
+		wall_slide_gravity = -50,
+		debug = true,
 	})
 	self.current_animation = nil
 	msg.post("@render:", "clear_color", { color = vmath.vector4(0.008, 0.090, 0.129, 1.0) })

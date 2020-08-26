@@ -112,13 +112,7 @@ function M.create(config)
 	-- collision shape correction vector
 	local correction = vmath.vector3()
 
-	-- track current and previous state to detect state changes
-	local function create_state()
-		return { wall_contact = false, wall_jump = false, wall_slide = false, ground_contact = false, rays = {}, down_rays = {} }
-	end
-	local state = {}
-	state.current = create_state()
-	state.previous = create_state()
+	local state = { wall_contact = false, wall_jump = false, wall_slide = false, ground_contact = false, rays = {}, down_rays = {} }
 
 	-- movement based on user input
 	local movement = vmath.vector3()
@@ -173,73 +167,6 @@ function M.create(config)
 		return bit.band(config.collisions.groups[group], direction) > 0
 	end
 
-	local function separate_ray(ray, message, force)
-		if platypus.collisions.separation == M.SEPARATION_RAYS or force then
-			local pos = go.get_position()
-			local separation
-			if message.request_id == RAY_CAST_LEFT_ID then
-				separation = ray * (1 - message.fraction)
-			elseif message.request_id == RAY_CAST_RIGHT_ID then
-				separation = ray * (1 - message.fraction)
-			elseif message.request_id == RAY_CAST_DOWN_LEFT_ID
-			or message.request_id == RAY_CAST_DOWN_RIGHT_ID
-			or message.request_id == RAY_CAST_DOWN_ID
-			then
-				separation = ray * (1 - message.fraction)
-				separation.x = 0
-				separation.y = math.ceil(separation.y)
-				pos.y = math.floor(pos.y)
-			elseif message.request_id == RAY_CAST_UP_ID then
-				separation = ray * (1 - message.fraction)
-			end
-			pos = pos - separation
-			go.set_position(pos)
-		end
-	end
-
-	local function separate_collision(message)
-		if platypus.collisions.separation == M.SEPARATION_SHAPES and config.collisions.groups[message.group] then
-			local check_down = check_group_direction(message.group, M.DIR_DOWN)
-			local check_up = check_group_direction(message.group, M.DIR_UP)
-			local check_left = check_group_direction(message.group, M.DIR_LEFT)
-			local check_right = check_group_direction(message.group, M.DIR_RIGHT)
-			if message.normal.y > 0 and not check_down then
-				return
-			elseif message.normal.y < 0 and not check_up then
-				return
-			elseif message.normal.x > 0 and not check_left then
-				return
-			elseif message.normal.x < 0 and not check_right then
-				return
-			end
-
-			-- remove any jitter when falling next to a wall
-			if not state.current.ground_contact then
-				message.normal.y = 0
-			end
-
-			-- don't push out of walls
-			if not check_left and message.normal.x < 0 then
-				message.normal.x = 0
-			elseif not check_right and message.normal.x > 0 then
-				message.normal.x = 0
-			end
-
-			-- don't push out from platforms
-			if not check_up and message.normal.y > 0 then
-				message.normal.y = 0
-			elseif not check_down and message.normal.y < 0 then
-				message.normal.y = 0
-			end
-
-			-- separate collision objects
-			local proj = vmath.dot(correction, message.normal)
-			local comp = (message.distance - proj) * message.normal
-			correction = correction + comp
-			go.set_position(go.get_position() + comp)
-		end
-	end
-
 	local function jumping_up()
 		return (platypus.velocity.y > 0 and platypus.gravity < 0) or (platypus.velocity.y < 0 and platypus.gravity > 0)
 	end
@@ -248,29 +175,13 @@ function M.create(config)
 	-- @param velocity Horizontal velocity
 	function platypus.left(velocity)
 		assert(velocity, "You must provide a velocity")
-		if state.current.wall_contact ~= 1 then
-			local slope_normal = state.current.slope and state.current.slope.normal
-			if slope_normal then
-				-- moving up or down the slope?
-				if slope_normal.x > 0 then
-					-- moving up - push up
-					-- the right amount depends on how the slope
-					-- to much = airborne
-					-- too little = pushing into slope
-					local ratio = 1 - (slope_normal.x / slope_normal.y)
-					movement.y = velocity * slope_normal.x * ratio
-					movement.x = -velocity * slope_normal.y
-				else
-					-- moving down - push down
-					movement.y = -velocity * math.abs(slope_normal.x)
-					movement.x = -velocity * slope_normal.y
-				end
-			elseif (platypus.const_wall_jump and not state.current.wall_jump) or (not platypus.const_wall_jump) then
+		if state.wall_contact ~= 1 then
+			if (platypus.const_wall_jump and not state.wall_jump) or (not platypus.const_wall_jump) then
 				movement.x = -velocity
+				--movement.y = -velocity
 			end
-		elseif state.current.wall_contact ~= -1 and platypus.allow_wall_slide and platypus.is_falling() and not state.current.wall_slide then
-			state.current.wall_slide = true
-			state.previous.wall_slide = true
+		elseif state.wall_contact ~= -1 and platypus.allow_wall_slide and platypus.is_falling() and not state.wall_slide then
+			state.wall_slide = true
 			msg.post("#", M.WALL_SLIDE)			-- notify about starting wall slide
 			platypus.velocity.y = 0				-- reduce vertical speed
 		end
@@ -280,26 +191,13 @@ function M.create(config)
 	-- @param velocity Horizontal velocity
 	function platypus.right(velocity)
 		assert(velocity, "You must provide a velocity")
-		if state.current.wall_contact ~= -1 then
-			local slope_normal = state.current.slope and state.current.slope.normal
-			if slope_normal then
-				-- moving up or down the slope?
-				if slope_normal.x > 0 then
-					-- moving down
-					movement.y = -velocity * math.abs(slope_normal.x)
-					movement.x = velocity * slope_normal.y
-				else
-					-- moving up
-					local ratio = 1 - math.abs(slope_normal.x / slope_normal.y)
-					movement.y = -velocity * slope_normal.x * ratio
-					movement.x = velocity * slope_normal.y
-				end
-			elseif (platypus.const_wall_jump and not state.current.wall_jump) or (not platypus.const_wall_jump) then
+		if state.wall_contact ~= -1 then
+			if (platypus.const_wall_jump and not state.wall_jump) or (not platypus.const_wall_jump) then
 				movement.x = velocity
+				--movement.y = -velocity
 			end
-		elseif state.current.wall_contact ~= 1 and platypus.allow_wall_slide and platypus.is_falling() and not state.current.wall_slide then
-			state.current.wall_slide = true
-			state.previous.wall_slide = true
+		elseif state.wall_contact ~= 1 and platypus.allow_wall_slide and platypus.is_falling() and not state.wall_slide then
+			state.wall_slide = true
 			msg.post("#", M.WALL_SLIDE)			-- notify about starting wall slide
 			platypus.velocity.y = 0				-- reduce vertical speed
 		end
@@ -328,31 +226,26 @@ function M.create(config)
 
 	--- Abort a wall slide
 	function platypus.abort_wall_slide()
-		if state.current.wall_slide then
-			state.current.wall_slide = false
-			state.previous.wall_slide = false
-		end
+		state.wall_slide = false
 	end
 
 	--- Try to make the game object jump.
 	-- @param power The power of the jump (ie how high)
 	function platypus.jump(power)
 		assert(power, "You must provide a jump takeoff power")
-		if state.current.ground_contact then
-			state.current.ground_contact = false
-			state.previous.ground_contact = false
+		if state.ground_contact then
+			state.ground_contact = false
 			platypus.velocity.y = power
 			msg.post("#", M.JUMP)
-		elseif state.current.wall_contact and platypus.allow_wall_jump then
-			state.current.wall_jump = true
-			state.previous.wall_jump = true
+		elseif state.wall_contact and platypus.allow_wall_jump then
+			state.wall_jump = true
 			platypus.abort_wall_slide()		-- abort wall sliding when jumping from wall
 			platypus.velocity.y = power * platypus.wall_jump_power_ratio_y
-			platypus.velocity.x = state.current.wall_contact * power * platypus.wall_jump_power_ratio_x
+			platypus.velocity.x = state.wall_contact * power * platypus.wall_jump_power_ratio_x
 			msg.post("#", M.WALL_JUMP)
-		elseif platypus.allow_double_jump and jumping_up() and not state.current.double_jumping then
+		elseif platypus.allow_double_jump and jumping_up() and not state.double_jumping then
 			platypus.velocity.y = platypus.velocity.y + power
-			state.current.double_jumping = true
+			state.double_jumping = true
 			msg.post("#", M.DOUBLE_JUMP)
 		end
 	end
@@ -377,37 +270,37 @@ function M.create(config)
 	--- Check if this object is jumping
 	-- @return true if jumping
 	function platypus.is_jumping()
-		return not state.current.ground_contact and not state.previous.ground_contact and jumping_up()
+		return not state.ground_contact and jumping_up()
 	end
 
 	--- Check if this object is jumping from wall
 	-- @return true if jumping from wall
 	function platypus.is_wall_jumping()
-		return state.current.wall_jump and jumping_up()
+		return state.wall_jump and jumping_up()
 	end
 
 	--- Check if this object is sliding on a wall
 	-- @return true if sliding on a wall
 	function platypus.is_wall_sliding()
-		return state.current.wall_slide
+		return state.wall_slide
 	end
 
 	--- Check if this object is falling
 	-- @return true if falling
 	function platypus.is_falling()
-		return not state.current.ground_contact and not state.previous.ground_contact and not jumping_up()
+		return not state.ground_contact and not jumping_up()
 	end
 
 	--- Check if this object has contact with the ground
 	-- @return true if ground contact
 	function platypus.has_ground_contact()
-		return state.current.ground_contact and state.previous.ground_contact
+		return state.ground_contact
 	end
 
 	--- Check if this object has contact with a wall
 	-- @return true if wall contact
 	function platypus.has_wall_contact()
-		return state.current.wall_contact and state.previous.wall_contact
+		return state.wall_contact
 	end
 
 	local function raycast(id, from, to)
@@ -421,7 +314,22 @@ function M.create(config)
 		return result
 	end
 
-	local function raycast_and_handle(raycast_origin)
+	local function separate_ray(ray, message, tweak)
+		ray = vmath.vector3(ray)
+		ray.x = 0
+		go.set_position(go.get_position() - ray * (1 - message.fraction))
+		
+		--[[tweak = tweak or 1.0
+		local fraction = math.max(0, (1 - message.fraction * tweak))
+		local ray_length = vmath.length(ray)
+		local distance = ray_length * fraction
+		local proj = vmath.dot(correction, message.normal)
+		local comp = (distance - proj) * message.normal
+		correction = correction + comp
+		go.set_position(go.get_position() + comp)--]]
+	end
+	
+	local function handle_collisions(raycast_origin)
 		local left = raycast(RAY_CAST_LEFT_ID, raycast_origin, raycast_origin + RAY_CAST_LEFT)
 		local right = raycast(RAY_CAST_RIGHT_ID, raycast_origin, raycast_origin + RAY_CAST_RIGHT)
 		local up = raycast(RAY_CAST_UP_ID, raycast_origin, raycast_origin + RAY_CAST_UP)
@@ -448,75 +356,85 @@ function M.create(config)
 			separate_ray(RAY_CAST_UP_RIGHT, up_right)
 		end
 
-		state.current.wall_contact = nil
+		local previous_wall_contact = state.wall_contact
+		state.wall_contact = nil
 		if left and check_group_direction(left.group, M.DIR_LEFT) then
-			state.current.wall_contact = 1
+			state.wall_contact = 1
 			separate_ray(RAY_CAST_LEFT, left)
 		end
 		if right and check_group_direction(right.group, M.DIR_RIGHT) then
-			state.current.wall_contact = -1
+			state.wall_contact = -1
 			separate_ray(RAY_CAST_RIGHT, right)
 		end
+		-- notify wall contact state change
+		if state.wall_contact and not previous_wall_contact then
+			msg.post("#", M.WALL_CONTACT)
+		end
+		-- abort wall slide when lost contact with the wall while sliding
+		if previous_wall_contact and not state.wall_contact then
+			platypus.abort_wall_slide()
+		end
 
+		
+		
 		-- build map of downward facing rays that hit something we care about
-		local down_rays = state.current.down_rays
+		local down_rays = state.down_rays
 		down_rays[RAY_CAST_DOWN_ID] = (down and down.normal.y > 0.7 and check_group_direction(down.group, M.DIR_DOWN)) and down or nil
 		down_rays[RAY_CAST_DOWN_LEFT_ID] = (down_left and down_left.normal.y > 0.7 and check_group_direction(down_left.group, M.DIR_DOWN)) and down_left or nil
 		down_rays[RAY_CAST_DOWN_RIGHT_ID] = (down_right and down_right.normal.y > 0.7 and check_group_direction(down_right.group, M.DIR_DOWN)) and down_right or nil
-
-		local slope = nil
-		if (down_rays[RAY_CAST_DOWN_LEFT_ID] and not down_rays[RAY_CAST_DOWN_ID] and not down_rays[RAY_CAST_DOWN_RIGHT_ID])
-		or (down_rays[RAY_CAST_DOWN_RIGHT_ID] and not down_rays[RAY_CAST_DOWN_ID] and not down_rays[RAY_CAST_DOWN_LEFT_ID])
-		then
-			state.current.slope = down_rays[RAY_CAST_DOWN_LEFT_ID] or down_rays[RAY_CAST_DOWN_RIGHT_ID]
-		else
-			state.current.slope = nil
-		end
-
+		
 		-- any downward facing ray that hit something?
-		-- only consider this if not moving up (for instance when jumping
-		-- through a one way platform)
-		if next(down_rays) and platypus.velocity.y <= 0 then
-			local ray = down_rays[next(down_rays)]
-
-			-- on ground - keep them separated!
-			if state.current.ground_contact then
-				state.current.falling = false
-				state.previous.ground_contact = true
-				
-				if ray.fraction < 0.8 then
-					separate_ray(RAYS[ray.request_id], ray, true)
-				end
+		local previous_falling = state.falling
+		if next(down_rays) then
+			-- on ground
+			if state.ground_contact then
+				state.falling = false
+				state.ground_contact = true
 			-- no prior ground contact - landed!
-			elseif not state.current.ground_contact then
-				local ray = down_rays[next(down_rays)]
-				local previous_down = state.previous.down_rays[RAY_CAST_DOWN_ID]
-				local previous_down_left = state.previous.down_rays[RAY_CAST_DOWN_ID]
-				local previous_down_right = state.previous.down_rays[RAY_CAST_DOWN_ID]
-				local no_previous_down = not previous_down and not previous_down_left and not previous_down_right
-				if state.current.falling and no_previous_down then
-					-- landed
-					platypus.velocity.x = 0
-					state.current.falling = false
-					state.current.ground_contact = true
-					state.previous.ground_contact = true
-					state.current.double_jumping = false
-					-- separation
-					separate_ray(RAYS[ray.request_id], ray, true)
+			else
+				platypus.velocity.x = 0
+				state.falling = false
+				state.ground_contact = true
+				state.double_jumping = false
+				state.wall_jump = false
+				platypus.abort_wall_slide()
+				msg.post("#", M.GROUND_CONTACT)
+			end
+			
+			-- separation from ground
+			local function foo(ray, data)
+				separate_ray(ray, data, 1.0)
+				-- change parent if needed
+				if platypus.parent_id ~= data.id then
+					msg.post(".", "set_parent", { parent_id = data.id })
+					platypus.parent_id = data.id
 				end
 			end
-
-			-- change parent if needed
-			if platypus.parent_id ~= ray.id then
-				msg.post(".", "set_parent", { parent_id = ray.id })
-				platypus.parent_id = ray.id
+			if down_rays[RAY_CAST_DOWN_ID] then
+				foo(RAY_CAST_DOWN, down_rays[RAY_CAST_DOWN_ID])
+			elseif down_rays[RAY_CAST_DOWN_LEFT_ID] then
+				foo(RAY_CAST_DOWN_LEFT, down_rays[RAY_CAST_DOWN_LEFT_ID])
+			elseif down_rays[RAY_CAST_DOWN_RIGHT_ID] then
+				foo(RAY_CAST_DOWN_RIGHT, down_rays[RAY_CAST_DOWN_RIGHT_ID])
 			end
+			
+			--[[for _,ray in pairs(down_rays) do
+				separate_ray(RAYS[ray.request_id], ray, 1.0)
+				-- change parent if needed
+				if platypus.parent_id ~= ray.id then
+					msg.post(".", "set_parent", { parent_id = ray.id })
+					platypus.parent_id = ray.id
+				end
+			end--]]
+			
 		-- if neither down, down left or down right hit anything this
 		-- frame then we don't have ground contact anymore
-		else
-			state.current.ground_contact = false
+		elseif not previous_falling then
+			state.falling = true
+			state.ground_contact = false
 			platypus.parent_id = nil
 			msg.post(".", "set_parent", { parent_id = nil })
+			msg.post("#", M.FALLING)
 		end
 	end
 
@@ -530,33 +448,25 @@ function M.create(config)
 			local ok, _ = pcall(go.get_position, platypus.parent_id)
 			if not ok then
 				platypus.parent_id = nil
-				state.current.ground_contact = false
-				go.set_position(go.get_position() + state.current.world_position - state.current.position + BOUNDS_BOTTOM)
+				state.ground_contact = false
+				go.set_position(go.get_position() + state.world_position - state.position + BOUNDS_BOTTOM)
 			end
 		end
 
 		-- apply wall slide gravity or normal gravity if not standing on the ground
-		if state.current.wall_slide then
+		if state.wall_slide then
 			platypus.velocity.y = platypus.velocity.y + platypus.wall_slide_gravity * dt
-		elseif not state.current.ground_contact then
+		else
 			platypus.velocity.y = platypus.velocity.y + platypus.gravity * dt
-		end
-
-		-- reset wall slide and wall jump when standing on the ground
-		if state.current.ground_contact then
-			platypus.abort_wall_slide()
-			if state.current.wall_jump then
-				state.current.wall_jump = false
-				state.previous.wall_jump = false
-			end
 		end
 
 		-- gradually reduce speed over the course of a few frames when
 		-- in ground contact.
 		-- this will prevent bounciness when landing and setting the
 		-- velocity to 0 from one frame to another
-		if state.current.ground_contact then
-			platypus.velocity.y = platypus.velocity.y * 0.5
+		if state.ground_contact then
+			--platypus.velocity.y = platypus.velocity.y * 0.5
+			--platypus.velocity.y = 0
 		end
 
 		-- update and clamp velocity
@@ -565,46 +475,21 @@ function M.create(config)
 			platypus.velocity.y = clamp(platypus.velocity.y, -platypus.max_velocity, platypus.max_velocity)
 		end
 
-		-- set and notify falling state
-		if not state.current.ground_contact and not state.previous.ground_contact and platypus.velocity.y < 0 then
-			state.current.falling = true
-			if state.current.falling and not state.previous.falling then
-				msg.post("#", M.FALLING)
-			end
-		end
-
 		-- move the game object
 		local distance = (platypus.velocity * dt) + (movement * dt)
 		local position = go.get_position()
 		local world_position = go.get_world_position()
-		state.current.position = position
-		state.current.world_position = world_position
+		state.position = position
+		state.world_position = world_position
 		go.set_position(position + distance)
 
-		-- ray cast left, right and down to detect level geometry
-		local raycast_origin = world_position + distance + platypus.collisions.offset
-		raycast_and_handle(raycast_origin)
+		local origin = world_position + distance + platypus.collisions.offset
+		handle_collisions(origin)
 
-		-- notify wall contact state change
-		if state.current.wall_contact and not state.previous.wall_contact then
-			msg.post("#", M.WALL_CONTACT)
-		end
-
-		-- abort wall slide when lost contact with the wall while sliding
-		if not state.current.wall_contact then
-			platypus.abort_wall_slide()
-		end
-
-		-- notify ground or air state change
-		if state.previous.falling and not state.current.falling then
-			msg.post("#", M.GROUND_CONTACT)
-		end
-		
 		-- reset transient state
 		movement.x = 0
 		movement.y = 0
 		correction = vmath.vector3()
-		state.previous, state.current = state.current, state.previous
 	end
 
 	--- Forward any on_message calls here to resolve physics collisions
@@ -613,9 +498,6 @@ function M.create(config)
 	function platypus.on_message(message_id, message)
 		assert(message_id, "You must provide a message_id")
 		assert(message, "You must provide a message")
-		if message_id == CONTACT_POINT_RESPONSE then
-			separate_collision(message)
-		end
 	end
 
 

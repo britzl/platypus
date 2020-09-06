@@ -137,6 +137,7 @@ The ```config``` table can have the following values:
 
 * `collisions` (table) - Lists of collision groups and bounding box size (REQUIRED)
 * `debug` (boolean) - True to draw ray casts
+* `reparent` (boolean) - True if the Platypus game object should be reparented when having ground contact. This is useful when having horizontally moving platforms. Defaults to true. (OPTIONAL)
 * `gravity` (number) - Gravity (pixels/s) (OPTIONAL)
 * `max_velocity` (number) - Maximum velocity of the game object (pixels/s). Set this to limit speed and prevent full penetration of game object into level geometry (OPTIONAL)
 * `wall_jump_power_ratio_x` (number) - Amount to multiply the jump power with when applying horizontal velocity during a wall jump (OPTIONAL)

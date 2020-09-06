@@ -42,6 +42,7 @@ local ALLOWED_CONFIG_KEYS = {
 	max_velocity = true,
 	gravity = true,
 	debug = true,
+	reparent = true,
 }
 
 M.DIR_UP = 0x01
@@ -89,6 +90,8 @@ function M.create(config)
 		print("WARNING! Config key 'SEPARATION_SHAPES' is no longer supported for 'collisions.separation'. Only raycast separation is supported!")
 	end
 
+	if config.reparent == nil then config.reparent = true end
+
 	-- public instance
 	local platypus = {
 		velocity = vmath.vector3(),
@@ -103,6 +106,7 @@ function M.create(config)
 		wall_slide_gravity = config.wall_slide_gravity or -50,
 		collisions = config.collisions,
 		debug = config.debug,
+		reparent = config.reparent,
 	}
 	-- get collision group set and convert to list for ray casts
 	local collision_groups_list = {}
@@ -110,13 +114,18 @@ function M.create(config)
 		collision_groups_list[#collision_groups_list + 1] = id
 	end
 
-	-- id of the collision object that this instance is parented to
-	platypus.parent_id = nil
-
 	-- collision shape correction vector
 	local correction = vmath.vector3()
 
-	local state = { wall_contact = false, wall_jump = false, wall_slide = false, ground_contact = false, rays = {}, down_rays = {} }
+	local state = {
+		wall_contact = false,
+		wall_jump = false,
+		wall_slide = false,
+		ground_contact = false, 
+		rays = {},
+		down_rays = {},
+		parent_id = nil,
+	}
 
 	-- movement based on user input
 	local movement = vmath.vector3()
@@ -143,8 +152,6 @@ function M.create(config)
 	local RAY_CAST_DOWN_RIGHT = RAY_CAST_RIGHT + RAY_CAST_DOWN
 	local RAY_CAST_UP_LEFT = RAY_CAST_UP + RAY_CAST_LEFT
 	local RAY_CAST_UP_RIGHT = RAY_CAST_UP + RAY_CAST_RIGHT
-
-	local RAY_CAST_DOWN_FRACTION = vmath.length(vmath.vector3(0, -platypus.collisions.bottom+1, 0)) / vmath.length(RAY_CAST_DOWN)
 
 	local RAYS = {
 		{ id = RAY_CAST_UP_ID, ray = RAY_CAST_UP },
@@ -327,9 +334,9 @@ function M.create(config)
 					if result.normal.y > 0.7 and not state.ground_contact then
 						state.ground_contact = true
 						-- change parent if needed
-						if platypus.parent_id ~= result.id then
+						if config.reparent and state.parent_id ~= result.id then
 							msg.post(".", "set_parent", { parent_id = result.id })
-							platypus.parent_id = result.id
+							state.parent_id = result.id
 						end
 					else
 						separation.x = 0
@@ -368,8 +375,8 @@ function M.create(config)
 		end
 
 		-- lost ground contact
-		if previous_ground_contact and not state.ground_contact then
-			platypus.parent_id = nil
+		if config.reparent and previous_ground_contact and not state.ground_contact then
+			state.parent_id = nil
 			msg.post(".", "set_parent", { parent_id = nil })
 		end
 
@@ -397,10 +404,10 @@ function M.create(config)
 		assert(dt, "You must provide a delta time")
 
 		-- was the ground we're standing on removed?
-		if platypus.parent_id then
-			local ok,_ = pcall(go.get_position, platypus.parent_id)
+		if config.reparent and state.parent_id then
+			local ok,_ = pcall(go.get_position, state.parent_id)
 			if not ok then
-				platypus.parent_id = nil
+				state.parent_id = nil
 				state.ground_contact = false
 				go.set_position(go.get_position() + state.world_position - state.position + BOUNDS_BOTTOM)
 			end

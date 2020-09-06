@@ -121,7 +121,7 @@ function M.create(config)
 		wall_contact = false,
 		wall_jump = false,
 		wall_slide = false,
-		ground_contact = false, 
+		ground_contact = false,
 		rays = {},
 		down_rays = {},
 		parent_id = nil,
@@ -163,7 +163,7 @@ function M.create(config)
 		{ id = RAY_CAST_LEFT_ID, ray = RAY_CAST_LEFT },
 		{ id = RAY_CAST_RIGHT_ID, ray = RAY_CAST_RIGHT },
 	}
-	
+
 	local function check_group_direction(group, direction)
 		return bit.band(config.collisions.groups[group], direction) > 0
 	end
@@ -316,7 +316,7 @@ function M.create(config)
 		end
 		return result
 	end
-	
+
 	local function handle_collisions(raycast_origin)
 		local offset = vmath.vector3()
 		local previous_ground_contact = state.ground_contact

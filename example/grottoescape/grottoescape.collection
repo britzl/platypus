@@ -367,7 +367,7 @@ instances {
   id: "platform3"
   prototype: "/example/grottoescape/moving_platform/moving_platform.go"
   position {
-    x: 124.0
+    x: 122.0
     y: 300.0
     z: 0.0
   }
@@ -395,7 +395,7 @@ instances {
   id: "platform4"
   prototype: "/example/grottoescape/moving_platform/moving_platform.go"
   position {
-    x: 210.0
+    x: 208.0
     y: 269.0
     z: 0.0
   }

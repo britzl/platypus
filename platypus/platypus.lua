@@ -180,6 +180,14 @@ function M.create(config)
 			if (platypus.const_wall_jump and not state.wall_jump) or (not platypus.const_wall_jump) then
 				movement.x = -velocity
 			end
+			-- down-hill
+			if state.slope_right then
+				movement.y = -velocity * math.abs(state.slope_right.y)
+			-- up-hill
+			elseif state.slope_left then
+				movement.y = -velocity * math.abs(state.slope_left.y)
+				movement.x = -velocity * math.abs(state.slope_left.x)
+			end
 		elseif state.wall_contact ~= -1 and platypus.allow_wall_slide and platypus.is_falling() and not state.wall_slide then
 			state.wall_slide = true
 			msg.post("#", M.WALL_SLIDE)			-- notify about starting wall slide
@@ -194,6 +202,14 @@ function M.create(config)
 		if state.wall_contact ~= -1 then
 			if (platypus.const_wall_jump and not state.wall_jump) or (not platypus.const_wall_jump) then
 				movement.x = velocity
+			end
+			-- up-hill
+			if state.slope_right then
+				movement.y = -velocity * math.abs(state.slope_right.y)
+				movement.x = velocity * math.abs(state.slope_right.x)
+			-- down-hill
+			elseif state.slope_left then
+				movement.y = -velocity * math.abs(state.slope_left.y)
 			end
 		elseif state.wall_contact ~= 1 and platypus.allow_wall_slide and platypus.is_falling() and not state.wall_slide then
 			state.wall_slide = true
@@ -333,6 +349,8 @@ function M.create(config)
 			local result = raycast(id, raycast_origin + offset, raycast_origin + offset + ray)
 			if result then
 				local separation = ray * (1 - result.fraction)
+				state.slope_left = id == RAY_CAST_DOWN_LEFT_ID and result.normal.x ~= 0 and result.normal.y ~= 0 and result.normal
+				state.slope_right = id == RAY_CAST_DOWN_RIGHT_ID and result.normal.x ~= 0 and result.normal.y ~= 0 and result.normal
 				local down = id == RAY_CAST_DOWN_ID or id == RAY_CAST_DOWN_LEFT_ID or id == RAY_CAST_DOWN_RIGHT_ID
 				if down then
 					if result.normal.y > 0.7 then

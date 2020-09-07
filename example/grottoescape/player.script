@@ -31,7 +31,7 @@ function init(self)
 				[hash("onewayplatform")] = platypus.DIR_DOWN,
 				[hash("onewaydoor")] = platypus.DIR_LEFT,
 			},
-			left = 7, right = 7, top = 7, bottom = 6, offset = vmath.vector3(0, 7, 0)
+			left = 4, right = 4, top = 7, bottom = 6, offset = vmath.vector3(0, 7, 0)
 		},
 		gravity = -800,
 		max_velocity = 300,

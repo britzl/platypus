@@ -335,12 +335,14 @@ function M.create(config)
 				local separation = ray * (1 - result.fraction)
 				local down = id == RAY_CAST_DOWN_ID or id == RAY_CAST_DOWN_LEFT_ID or id == RAY_CAST_DOWN_RIGHT_ID
 				if down then
-					if result.normal.y > 0.7 and not state.ground_contact then
-						state.ground_contact = true
-						-- change parent if needed
-						if config.reparent and state.parent_id ~= result.id then
-							msg.post(".", "set_parent", { parent_id = result.id })
-							state.parent_id = result.id
+					if result.normal.y > 0.7 then
+						if not state.ground_contact then
+							state.ground_contact = true
+							-- change parent if needed
+							if config.reparent and state.parent_id ~= result.id then
+								msg.post(".", "set_parent", { parent_id = result.id })
+								state.parent_id = result.id
+							end
 						end
 					else
 						separation.x = 0

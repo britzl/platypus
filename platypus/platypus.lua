@@ -407,6 +407,7 @@ function M.create(config)
 		-- gained ground contact
 		if not previous_ground_contact and state.ground_contact then
 			platypus.velocity.x = 0
+			platypus.velocity.y = 0
 			state.falling = false
 			state.double_jumping = false
 			state.wall_jump = false
@@ -440,8 +441,10 @@ function M.create(config)
 		-- apply wall slide gravity or normal gravity if not standing on the ground
 		if state.wall_slide then
 			platypus.velocity.y = platypus.velocity.y + platypus.wall_slide_gravity * dt
-		else
+		elseif not state.ground_contact then
 			platypus.velocity.y = platypus.velocity.y + platypus.gravity * dt
+		else
+			platypus.velocity.y = platypus.gravity * dt
 		end
 
 		-- update and clamp velocity

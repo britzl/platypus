@@ -233,6 +233,10 @@ function M.create(config)
 	function platypus.jump(power)
 		assert(power, "You must provide a jump takeoff power")
 		if state.ground_contact then
+			if config.reparent then
+				state.parent_id = nil
+				msg.post(".", "set_parent", { parent_id = nil })
+			end
 			state.ground_contact = false
 			platypus.velocity.y = power
 			msg.post("#", M.JUMP)

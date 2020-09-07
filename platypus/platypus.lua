@@ -434,7 +434,6 @@ function M.create(config)
 		state.world_position = world_position
 		local origin = world_position + distance + platypus.collisions.offset
 		local offset = handle_collisions(origin)
-		go.set_position(position + distance + offset)
 
 		-- falling?
 		local previous_falling = state.falling
@@ -442,6 +441,13 @@ function M.create(config)
 			state.falling = true
 			msg.post("#", M.FALLING)
 		end
+
+		-- set y velocity to zero when on the ground
+		if state.ground_contact then
+			platypus.velocity.y = 0
+		end
+
+		go.set_position(position + distance + offset)
 
 		-- reset transient state
 		movement.x = 0

@@ -177,6 +177,7 @@ function M.create(config)
 	function platypus.left(velocity)
 		assert(velocity, "You must provide a velocity")
 		if state.wall_contact ~= 1 then
+			state.wall_slide = false
 			if (platypus.const_wall_jump and not state.wall_jump) or (not platypus.const_wall_jump) then
 				movement.x = -velocity
 			end
@@ -200,6 +201,7 @@ function M.create(config)
 	function platypus.right(velocity)
 		assert(velocity, "You must provide a velocity")
 		if state.wall_contact ~= -1 then
+			state.wall_slide = false
 			if (platypus.const_wall_jump and not state.wall_jump) or (not platypus.const_wall_jump) then
 				movement.x = velocity
 			end

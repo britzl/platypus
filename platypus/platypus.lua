@@ -155,8 +155,8 @@ function M.create(config)
 
 	local RAYS = {
 		{ id = RAY_CAST_UP_ID, ray = RAY_CAST_UP },
-		--[RAY_CAST_UP_LEFT_ID] = RAY_CAST_UP_LEFT,
-		--[RAY_CAST_UP_RIGHT_ID] = RAY_CAST_UP_RIGHT,
+		{ id = RAY_CAST_UP_LEFT_ID, ray = RAY_CAST_UP_LEFT },
+		{ id = RAY_CAST_UP_RIGHT_ID, ray = RAY_CAST_UP_RIGHT },
 		{ id = RAY_CAST_DOWN_ID, ray = RAY_CAST_DOWN },
 		{ id = RAY_CAST_DOWN_LEFT_ID, ray = RAY_CAST_DOWN_LEFT },
 		{ id = RAY_CAST_DOWN_RIGHT_ID, ray = RAY_CAST_DOWN_RIGHT },
@@ -355,7 +355,7 @@ function M.create(config)
 				state.slope_right = id == RAY_CAST_DOWN_RIGHT_ID and result.normal.x ~= 0 and result.normal.y ~= 0 and result.normal
 				local down = id == RAY_CAST_DOWN_ID or id == RAY_CAST_DOWN_LEFT_ID or id == RAY_CAST_DOWN_RIGHT_ID
 				if down then
-					if result.normal.y > 0.7 then
+					if check_group_direction(result.group, M.DIR_DOWN) and result.normal.y > 0.7 then
 						if not state.ground_contact then
 							state.ground_contact = true
 							-- change parent if needed
@@ -369,8 +369,8 @@ function M.create(config)
 						separation.y = 0
 					end
 					separation.x = 0
-				elseif id == RAY_CAST_UP_ID then
-					if check_group_direction(result.group, M.DIR_UP) then
+				elseif id == RAY_CAST_UP_ID or id == RAY_CAST_UP_LEFT_ID or id == RAY_CAST_UP_RIGHT_ID then
+					if check_group_direction(result.group, M.DIR_UP) and result.normal.y < -0.7 then
 						platypus.velocity.y = 0
 					else
 						separation.x = 0

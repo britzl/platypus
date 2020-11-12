@@ -153,15 +153,18 @@ function M.create(config)
 	local RAY_CAST_UP_LEFT = RAY_CAST_UP + RAY_CAST_LEFT
 	local RAY_CAST_UP_RIGHT = RAY_CAST_UP + RAY_CAST_RIGHT
 
+	-- order of ray casts is important!
+	-- we need to check for wall contact before checking ground
+	-- contact to be able to handle collision separation properly
 	local RAYS = {
+		{ id = RAY_CAST_LEFT_ID, ray = RAY_CAST_LEFT },
+		{ id = RAY_CAST_RIGHT_ID, ray = RAY_CAST_RIGHT },
 		{ id = RAY_CAST_UP_ID, ray = RAY_CAST_UP },
 		{ id = RAY_CAST_UP_LEFT_ID, ray = RAY_CAST_UP_LEFT },
 		{ id = RAY_CAST_UP_RIGHT_ID, ray = RAY_CAST_UP_RIGHT },
 		{ id = RAY_CAST_DOWN_ID, ray = RAY_CAST_DOWN },
 		{ id = RAY_CAST_DOWN_LEFT_ID, ray = RAY_CAST_DOWN_LEFT },
 		{ id = RAY_CAST_DOWN_RIGHT_ID, ray = RAY_CAST_DOWN_RIGHT },
-		{ id = RAY_CAST_LEFT_ID, ray = RAY_CAST_LEFT },
-		{ id = RAY_CAST_RIGHT_ID, ray = RAY_CAST_RIGHT },
 	}
 
 	local function check_group_direction(group, direction)
@@ -355,7 +358,8 @@ function M.create(config)
 				state.slope_right = id == RAY_CAST_DOWN_RIGHT_ID and result.normal.x ~= 0 and result.normal.y ~= 0 and result.normal
 				local down = id == RAY_CAST_DOWN_ID or id == RAY_CAST_DOWN_LEFT_ID or id == RAY_CAST_DOWN_RIGHT_ID
 				if down then
-					if check_group_direction(result.group, M.DIR_DOWN) and result.normal.y > 0.7 then
+					local collide_down = check_group_direction(result.group, M.DIR_DOWN)
+					if collide_down and result.normal.y > 0.7 then
 						if not state.ground_contact then
 							state.ground_contact = true
 							-- change parent if needed
@@ -364,20 +368,42 @@ function M.create(config)
 								state.parent_id = result.id
 							end
 						end
+						separation.x = 0
+					elseif collide_down and result.normal.x ~= 0 then
+						-- down-left or right hit a wall
+						-- if we don't have proper wall contact we separate to
+						-- prevent from sliding into for instance a moving platform
+						if state.wall_contact then
+							separation.x = 0
+							separation.y = 0
+						else
+							separation.y = 0
+						end
 					else
 						separation.x = 0
 						separation.y = 0
 					end
-					separation.x = 0
+					
 				elseif id == RAY_CAST_UP_ID or id == RAY_CAST_UP_LEFT_ID or id == RAY_CAST_UP_RIGHT_ID then
-					if check_group_direction(result.group, M.DIR_UP) and result.normal.y < -0.7 then
+					local collide_up = check_group_direction(result.group, M.DIR_UP)
+					if collide_up and result.normal.y < -0.7 then
 						platypus.velocity.y = 0
+					elseif collide_up and result.normal.x ~= 0 then
+						-- up-left or up hit a wall
+						-- if we don't have proper wall contact we separate to
+						-- prevent from sliding into for instance a moving platform
+						if state.wall_contact then
+							separation.x = 0
+							separation.y = 0
+						else
+							separation.y = 0
+						end
 					else
 						separation.x = 0
 						separation.y = 0
 					end
 				elseif id == RAY_CAST_LEFT_ID then
-					state.wall_contact = 0
+					state.wall_contact = nil
 					if check_group_direction(result.group, M.DIR_LEFT) then
 						state.wall_contact = 1
 					else
@@ -385,7 +411,7 @@ function M.create(config)
 						separation.y = 0
 					end
 				elseif id == RAY_CAST_RIGHT_ID then
-					state.wall_contact = 0
+					state.wall_contact = nil
 					if check_group_direction(result.group, M.DIR_RIGHT) then
 						state.wall_contact = -1
 					else

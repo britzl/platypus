@@ -356,8 +356,11 @@ function M.create(config)
 				local separation = ray * (1 - result.fraction)
 				state.slope_left = id == RAY_CAST_DOWN_LEFT_ID and result.normal.x ~= 0 and result.normal.y ~= 0 and result.normal
 				state.slope_right = id == RAY_CAST_DOWN_RIGHT_ID and result.normal.x ~= 0 and result.normal.y ~= 0 and result.normal
-				local down = id == RAY_CAST_DOWN_ID or id == RAY_CAST_DOWN_LEFT_ID or id == RAY_CAST_DOWN_RIGHT_ID
-				if down then
+
+				if id == RAY_CAST_DOWN_ID
+				or previous_ground_contact and id == RAY_CAST_DOWN_LEFT_ID
+				or previous_ground_contact and id == RAY_CAST_DOWN_RIGHT_ID
+				then
 					local collide_down = check_group_direction(result.group, M.DIR_DOWN)
 					if collide_down and result.normal.y > 0.7 then
 						if not state.ground_contact then

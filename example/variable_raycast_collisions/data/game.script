@@ -1,5 +1,6 @@
 function init(self)
-  msg.post("@render:", "use_fixed_projection", { zoom = 4 })
+  --not needed with orthographic-camera module
+  --msg.post("@render:", "use_fixed_projection", { zoom = 4 })
 end
 
 function final(self)

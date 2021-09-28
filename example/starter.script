@@ -18,13 +18,19 @@ end
 
 
 function on_message(self, message_id, message, sender)
+  local launcher = {
+    [hash("load_grotto")] = "#grottolaunch",
+    [hash("load_raycasts")] = "#varraycastslaunch"
+  }
+
   if message_id == hash("proxy_loaded") then
     msg.post(sender, "init")
     msg.post(sender, "enable")
   end
  
-  if message_id == hash("load_grotto") then
-    msg.post("#grottolaunch", "load")
+  if launcher[message_id] then
+    print("message id",message_id)
+    msg.post(launcher[message_id], "load")
     msg.post("#gui_proxy","unload")
   end
 end

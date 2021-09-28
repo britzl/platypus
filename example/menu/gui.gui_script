@@ -11,7 +11,7 @@ function on_input(self, action_id, action)
       msg.post("starter_collection:/go#starter", "load_grotto")
     end
 		if gui.pick_node(node_raycasts, action.x, action.y) then
-      print("raycasts !")
+      msg.post("starter_collection:/go#starter", "load_raycasts")
     end
 	end
 end

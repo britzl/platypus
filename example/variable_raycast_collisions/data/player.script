@@ -11,7 +11,7 @@ function init(self)
           [hash("onewayplatform")] = platypus.DIR_DOWN,
           [hash("onewaydoor")] = platypus.DIR_LEFT,
         },
-        left = 4, right = 4, top = 7, bottom = 6, offset = vmath.vector3(0, 7, 0)
+        left = 4, right = 4, top = 7, bottom = 6, offset = vmath.vector3(0, -1, 0)
       },
       gravity = -800,
       max_velocity = 300,
@@ -36,9 +36,8 @@ function update(self, dt)
 end
 
 function on_message(self, message_id, message, sender)
-	-- Add message-handling code here
-	-- Learn more: https://defold.com/manuals/message-passing/
-	-- Remove this function if not needed
+  self.platypus.on_message(message_id, message)
+  print("message id: ",message_id)
 end
 
 function on_input(self, action_id, action)

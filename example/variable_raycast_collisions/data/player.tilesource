@@ -1,10 +1,50 @@
-image: "/data/player.png"
+image: "/example/variable_raycast_collisions/data/player.png"
 tile_width: 16
 tile_height: 16
 tile_margin: 0
 tile_spacing: 0
-collision: "/data/player.png"
+collision: "/example/variable_raycast_collisions/data/player.png"
 material_tag: "tile"
+convex_hulls {
+  index: 0
+  count: 8
+  collision_group: "player"
+}
+convex_hulls {
+  index: 8
+  count: 8
+  collision_group: "player"
+}
+convex_hulls {
+  index: 16
+  count: 9
+  collision_group: "player"
+}
+convex_hulls {
+  index: 25
+  count: 6
+  collision_group: "player"
+}
+convex_hulls {
+  index: 31
+  count: 7
+  collision_group: "player"
+}
+convex_hulls {
+  index: 38
+  count: 8
+  collision_group: "player"
+}
+convex_hulls {
+  index: 46
+  count: 8
+  collision_group: "player"
+}
+convex_hulls {
+  index: 54
+  count: 5
+  collision_group: "player"
+}
 collision_groups: "player"
 animations {
   id: "idle"

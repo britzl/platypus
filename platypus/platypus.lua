@@ -135,6 +135,7 @@ function M.create(config)
 	local BOUNDS_LEFT = vmath.vector3(-platypus.collisions.left, 0, 0)
 	local BOUNDS_RIGHT = vmath.vector3(platypus.collisions.right, 0, 0)
 
+ 
 	local RAY_CAST_LEFT_ID = 1
 	local RAY_CAST_RIGHT_ID = 2
 	local RAY_CAST_UP_ID = 3
@@ -143,6 +144,7 @@ function M.create(config)
 	local RAY_CAST_DOWN_ID = 6
 	local RAY_CAST_DOWN_LEFT_ID = 7
 	local RAY_CAST_DOWN_RIGHT_ID = 8
+  
 
 	local RAY_CAST_LEFT = BOUNDS_LEFT + vmath.vector3(-1, 0, 0)
 	local RAY_CAST_RIGHT = BOUNDS_RIGHT + vmath.vector3(1, 0, 0)
@@ -156,7 +158,8 @@ function M.create(config)
 	-- order of ray casts is important!
 	-- we need to check for wall contact before checking ground
 	-- contact to be able to handle collision separation properly
-	local RAYS = {
+--[[
+  local RAYS = {
 		{ id = RAY_CAST_LEFT_ID, ray = RAY_CAST_LEFT },
 		{ id = RAY_CAST_RIGHT_ID, ray = RAY_CAST_RIGHT },
 		{ id = RAY_CAST_UP_ID, ray = RAY_CAST_UP },
@@ -166,6 +169,12 @@ function M.create(config)
 		{ id = RAY_CAST_DOWN_LEFT_ID, ray = RAY_CAST_DOWN_LEFT },
 		{ id = RAY_CAST_DOWN_RIGHT_ID, ray = RAY_CAST_DOWN_RIGHT },
 	}
+--]]
+  local RAYS = {
+		  RAY_CAST_LEFT, RAY_CAST_RIGHT, RAY_CAST_UP, RAY_CAST_UP_LEFT,
+		  RAY_CAST_UP_RIGHT, RAY_CAST_DOWN, RAY_CAST_DOWN_LEFT, RAY_CAST_DOWN_RIGHT
+	}
+
 
 	local function check_group_direction(group, direction)
 		return bit.band(config.collisions.groups[group], direction) > 0
@@ -348,9 +357,9 @@ function M.create(config)
 		local previous_wall_contact = state.wall_contact
 		state.wall_contact = nil
 		state.ground_contact = false
-		for _,r in ipairs(RAYS) do
-			local ray = r.ray
-			local id = r.id
+		for id, ray in ipairs(RAYS) do
+			--local ray = r.ray
+			--local id = r.id
 			local result = raycast(id, raycast_origin + offset, raycast_origin + offset + ray)
 			if result then
 				local separation = ray * (1 - result.fraction)

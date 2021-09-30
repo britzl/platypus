@@ -1,7 +1,7 @@
 script: "/example/menu/gui.gui_script"
 fonts {
   name: "system_font"
-  font: "/builtins/fonts/system_font.font"
+  font: "/example/menu/default_font.font"
 }
 background_color {
   x: 0.0
@@ -78,7 +78,7 @@ nodes {
   }
   scale {
     x: 1.0
-    y: 3.0
+    y: 1.0
     z: 1.0
     w: 1.0
   }
@@ -195,7 +195,7 @@ nodes {
   }
   scale {
     x: 1.0
-    y: 3.0
+    y: 1.0
     z: 1.0
     w: 1.0
   }

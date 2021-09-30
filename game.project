@@ -5,7 +5,7 @@ dependencies#0 = https://github.com/britzl/defold-orthographic/archive/master.zi
 dependencies#1 = https://github.com/britzl/defold-input/archive/2.8.3.zip
 
 [bootstrap]
-main_collection = /example/variable_raycast_collisions/varraycasts.collectionc
+main_collection = /example/starter.collectionc
 render = /orthographic/render/orthographic.renderc
 
 [input]

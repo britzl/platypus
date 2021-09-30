@@ -141,35 +141,35 @@ function M.create(config)
 	local RAY_CAST_DOWN_LEFT_ID = 7
 	local RAY_CAST_DOWN_RIGHT_ID = 8
  
-  local RAYS = {}
+	local RAYS = {}
 
-  -- Change the rays and bounds for collision detection
-  -- @param collisions table with top,left,right,bottom keys
-  function platypus.define_collisions(collisions)
-	  BOUNDS_BOTTOM = vmath.vector3(0, -collisions.bottom, 0)
-	  BOUNDS_TOP = vmath.vector3(0, collisions.top, 0)
-  	BOUNDS_LEFT = vmath.vector3(-collisions.left, 0, 0)
-  	BOUNDS_RIGHT = vmath.vector3(collisions.right, 0, 0)
+	-- Change the rays and bounds for collision detection
+	-- @param collisions table with top,left,right,bottom keys
+	function platypus.define_collisions(collisions)
+		BOUNDS_BOTTOM = vmath.vector3(0, -collisions.bottom, 0)
+		BOUNDS_TOP = vmath.vector3(0, collisions.top, 0)
+		BOUNDS_LEFT = vmath.vector3(-collisions.left, 0, 0)
+		BOUNDS_RIGHT = vmath.vector3(collisions.right, 0, 0)
 	
-    local RAY_CAST_LEFT = BOUNDS_LEFT + vmath.vector3(-1, 0, 0)
-  	local RAY_CAST_RIGHT = BOUNDS_RIGHT + vmath.vector3(1, 0, 0)
-  	local RAY_CAST_DOWN = BOUNDS_BOTTOM + vmath.vector3(0, -1, 0)
-  	local RAY_CAST_UP = BOUNDS_TOP + vmath.vector3(0, 1, 0)
-  	local RAY_CAST_DOWN_LEFT = RAY_CAST_LEFT + RAY_CAST_DOWN
-  	local RAY_CAST_DOWN_RIGHT = RAY_CAST_RIGHT + RAY_CAST_DOWN
-  	local RAY_CAST_UP_LEFT = RAY_CAST_UP + RAY_CAST_LEFT
-  	local RAY_CAST_UP_RIGHT = RAY_CAST_UP + RAY_CAST_RIGHT
+		local RAY_CAST_LEFT = BOUNDS_LEFT + vmath.vector3(-1, 0, 0)
+		local RAY_CAST_RIGHT = BOUNDS_RIGHT + vmath.vector3(1, 0, 0)
+		local RAY_CAST_DOWN = BOUNDS_BOTTOM + vmath.vector3(0, -1, 0)
+		local RAY_CAST_UP = BOUNDS_TOP + vmath.vector3(0, 1, 0)
+		local RAY_CAST_DOWN_LEFT = RAY_CAST_LEFT + RAY_CAST_DOWN
+		local RAY_CAST_DOWN_RIGHT = RAY_CAST_RIGHT + RAY_CAST_DOWN
+		local RAY_CAST_UP_LEFT = RAY_CAST_UP + RAY_CAST_LEFT
+		local RAY_CAST_UP_RIGHT = RAY_CAST_UP + RAY_CAST_RIGHT
 
-	  -- order of ray casts is important!
-  	-- we need to check for wall contact before checking ground
-  	-- contact to be able to handle collision separation properly
-    RAYS = {
-      RAY_CAST_LEFT, RAY_CAST_RIGHT, RAY_CAST_UP, RAY_CAST_UP_LEFT,
-      RAY_CAST_UP_RIGHT, RAY_CAST_DOWN, RAY_CAST_DOWN_LEFT, RAY_CAST_DOWN_RIGHT
-    }
-  end
+		-- order of ray casts is important!
+		-- we need to check for wall contact before checking ground
+		-- contact to be able to handle collision separation properly
+		RAYS = {
+			RAY_CAST_LEFT, RAY_CAST_RIGHT, RAY_CAST_UP, RAY_CAST_UP_LEFT,
+			RAY_CAST_UP_RIGHT, RAY_CAST_DOWN, RAY_CAST_DOWN_LEFT, RAY_CAST_DOWN_RIGHT
+		}
+	end
 
-  platypus.define_collisions(platypus.collisions)
+	platypus.define_collisions(platypus.collisions)
 
 	local function check_group_direction(group, direction)
 		return bit.band(config.collisions.groups[group], direction) > 0

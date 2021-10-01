@@ -296,6 +296,13 @@ Check if the game object is sliding down a wall.
 Toggle debug draw of ray casts.
 
 
+### instance.define_collisions(collisions)
+Change the rays and bounds for collision detection.
+
+**PARAMETERS**
+* `collisions` (table) - collisions table with `top`,`left`,`right` and `bottom` keys
+
+
 ## Messages
 
 ### platypus.FALLING

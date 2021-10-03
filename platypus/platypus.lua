@@ -194,7 +194,7 @@ function M.create(config)
 			-- up-hill
 			elseif state.slope_left then
 				movement.y = -velocity * math.abs(state.slope_left.y)
-				movement.x = -velocity * math.abs(state.slope_left.x)
+				movement.x = -velocity * (1 - math.abs(state.slope_left.x))
 			end
 		elseif state.wall_contact ~= -1 and platypus.allow_wall_slide and platypus.is_falling() and not state.wall_slide then
 			state.wall_slide = true
@@ -215,7 +215,7 @@ function M.create(config)
 			-- up-hill
 			if state.slope_right then
 				movement.y = -velocity * math.abs(state.slope_right.y)
-				movement.x = velocity * math.abs(state.slope_right.x)
+				movement.x = velocity * (1 - math.abs(state.slope_right.x))
 			-- down-hill
 			elseif state.slope_left then
 				movement.y = -velocity * math.abs(state.slope_left.y)

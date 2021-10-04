@@ -145,7 +145,7 @@ function M.create(config)
 
 	-- Change the rays and bounds for collision detection
 	-- @param collisions table with top,left,right,bottom keys
-	function platypus.define_collisions(collisions)
+	function platypus.set_collisions(collisions)
 		BOUNDS_BOTTOM = vmath.vector3(0, -collisions.bottom, 0)
 		BOUNDS_TOP = vmath.vector3(0, collisions.top, 0)
 		BOUNDS_LEFT = vmath.vector3(-collisions.left, 0, 0)
@@ -169,7 +169,7 @@ function M.create(config)
 		}
 	end
 
-	platypus.define_collisions(platypus.collisions)
+	platypus.set_collisions(platypus.collisions)
 
 	local function check_group_direction(group, direction)
 		return bit.band(config.collisions.groups[group], direction) > 0

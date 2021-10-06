@@ -2,26 +2,12 @@ function init(self)
 	msg.post(".", "acquire_input_focus")
 end
 
-
 function on_input(self, action_id, action)
-	local node_grotto = gui.get_node("grotto")
-	local node_raycasts = gui.get_node("varraycasts")
-
 	if action_id == hash("touch") and action.pressed then
-		if gui.pick_node(node_grotto, action.x, action.y) then
-			msg.post("starter_collection:/go#starter", "load_grotto")
-		elseif gui.pick_node(node_raycasts, action.x, action.y) then
-			msg.post("starter_collection:/go#starter", "load_raycasts")
+		if gui.pick_node(gui.get_node("grotto"), action.x, action.y) then
+			msg.post("loader:/loader", "load_grotto")
+		elseif gui.pick_node(gui.get_node("varraycasts"), action.x, action.y) then
+			msg.post("loader:/loader", "load_raycasts")
 		end
 	end
 end
-
-
-function on_message(self, message_id, message, sender)
-		if message_id == hash("proxy_loaded") then
-				msg.post(sender, "init")
-				msg.post(sender, "enable")
-				msg.post("menu/#gui_proxy","unload")
-		end
-end
-

@@ -1,4 +1,4 @@
-local platypus = require"platypus.platypus"
+local platypus = require "platypus.platypus"
 
 
 local move_table = {}
@@ -43,7 +43,7 @@ end
 
 
 function change_sprite(self, anim, collisions)
-	msg.post("#player", "play_animation", { id=hash(anim) })
+	sprite.play_flipbook("#sprite", anim)
 	self.platypus.set_collisions(collisions)
 end
 

@@ -1,4 +1,4 @@
-tile_set: "/example/variable_raycast_collisions/data/player.tilesource"
+tile_set: "/example/variable_raycasts/assets/player.tilesource"
 default_animation: "idle"
 material: "/builtins/materials/sprite.material"
 blend_mode: BLEND_MODE_ALPHA

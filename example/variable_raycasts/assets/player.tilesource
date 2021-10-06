@@ -1,9 +1,9 @@
-image: "/example/variable_raycast_collisions/data/player.png"
+image: "/example/variable_raycasts/assets/images/player.png"
 tile_width: 16
 tile_height: 16
 tile_margin: 0
 tile_spacing: 0
-collision: "/example/variable_raycast_collisions/data/player.png"
+collision: "/example/variable_raycasts/assets/images/player.png"
 material_tag: "tile"
 convex_hulls {
   index: 0

@@ -1,0 +1,25 @@
+local PROXIES = {
+	[hash("load_grotto")] = "#grotto_escape",
+	[hash("load_raycasts")] = "#variable_raycasts",
+	[hash("load_menu")] = "#menu",
+}
+
+function init(self)
+	msg.post(".", "acquire_input_focus")
+	msg.post("#", "load_menu")
+	self.current = nil
+end
+
+function on_message(self, message_id, message, sender)
+	if PROXIES[message_id] then
+		if self.current then
+			msg.post(self.current, "unload")
+		end
+		local url = PROXIES[message_id]
+		msg.post(url, "async_load")
+		self.current = url
+	elseif message_id == hash("proxy_loaded") then
+		msg.post(sender, "init")
+		msg.post(sender, "enable")
+	end
+end

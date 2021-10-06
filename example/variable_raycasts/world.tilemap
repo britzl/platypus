@@ -1,4 +1,4 @@
-tile_set: "/example/variable_raycast_collisions/data/tiles.tilesource"
+tile_set: "/example/variable_raycasts/assets/tiles.tilesource"
 layers {
   id: "layer1"
   z: 0.0

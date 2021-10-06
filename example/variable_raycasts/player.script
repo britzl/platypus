@@ -1,0 +1,57 @@
+local platypus = require "platypus.platypus"
+
+
+local move_table = {}
+
+function init(self)
+	msg.post(".", "acquire_input_focus")
+	self.input_state = {}
+	self.platypus = platypus.create({
+			collisions = {
+				separation = platypus.SEPARATION_RAYS,
+				groups = {
+					[hash("ground")] = platypus.DIR_ALL,
+				},
+				left = 4, right = 4, top = 7, bottom = 6, offset = vmath.vector3(0, -1, 0)
+			},
+			gravity = -800,
+			max_velocity = 300,
+			allow_double_jump = true,
+			allow_wall_jump = true,
+			allow_wall_slide = true,
+			wall_slide_gravity = -50,
+			debug = true,
+		})
+	self.current_animation = nil
+
+	move_table = {
+		[hash("left")] = function() self.platypus.left(10) end ,
+		[hash("right")]= function() self.platypus.right(10) end,
+		[hash("down")] = function() change_sprite(self, "avoid", {left = 4, right = 4, top = 1, bottom = 6}) end
+	}
+end
+
+
+function update(self, dt)
+	self.platypus.update(dt)
+end
+
+
+function on_message(self, message_id, message, sender)
+	self.platypus.on_message(message_id, message)
+end
+
+
+function change_sprite(self, anim, collisions)
+	sprite.play_flipbook("#sprite", anim)
+	self.platypus.set_collisions(collisions)
+end
+
+
+function on_input(self, action_id, action)
+	change_sprite(self, "idle", {left = 4, right = 4, top = 7, bottom = 6} )
+	if move_table[action_id] then
+		move_table[action_id]()
+	end
+end
+

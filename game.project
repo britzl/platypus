@@ -1,10 +1,11 @@
 [project]
 title = Platypus
 version = 0
-dependencies = https://github.com/britzl/defold-orthographic/archive/2.2.5.zip,https://github.com/britzl/defold-input/archive/2.8.3.zip
+dependencies#0 = https://github.com/britzl/defold-orthographic/archive/master.zip
+dependencies#1 = https://github.com/britzl/defold-input/archive/2.8.3.zip
 
 [bootstrap]
-main_collection = /example/grottoescape/grottoescape.collectionc
+main_collection = /example/loader.collectionc
 render = /orthographic/render/orthographic.renderc
 
 [input]
@@ -17,7 +18,6 @@ height = 720
 
 [physics]
 scale = 0.02
-debug = 0
 gravity_y = 0
 
 [script]

@@ -1,0 +1,13 @@
+function init(self)
+	msg.post(".", "acquire_input_focus")
+end
+
+function on_input(self, action_id, action)
+	if action_id == hash("touch") and action.pressed then
+		if gui.pick_node(gui.get_node("grotto"), action.x, action.y) then
+			msg.post("loader:/loader", "load_grotto")
+		elseif gui.pick_node(gui.get_node("varraycasts"), action.x, action.y) then
+			msg.post("loader:/loader", "load_raycasts")
+		end
+	end
+end

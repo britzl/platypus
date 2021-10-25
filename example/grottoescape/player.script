@@ -3,12 +3,16 @@ local platypus = require "platypus.platypus"
 local LEFT = hash("left")
 local RIGHT = hash("right")
 local JUMP = hash("jump")
+local UP = hash("up")
+local DOWN = hash("down")
 local TOGGLE_DEBUG = hash("toggle_debug")
 local TOGGLE_PROFILE = hash("toggle_profile")
 
 local ANIM_RUN = hash("run")
 local ANIM_JUMP = hash("jump")
 local ANIM_IDLE = hash("idle")
+local ANIM_CLIMB = hash("climb")
+local ANIM_CLIMB_IDLE = hash("climb_idle")
 
 
 local function play_animation(self, animation)
@@ -45,19 +49,57 @@ function init(self)
 	msg.post("@render:", "clear_color", { color = vmath.vector4(0.008, 0.090, 0.129, 1.0) })
 end
 
+local function get_horizontal_speed(climbing, ground_contact)
+	if climbing then
+		return 50
+	elseif ground_contact then
+		return 120
+	else
+		return 100
+	end
+end
+
+local function climb_up(self)
+	play_animation(self, ANIM_CLIMB)
+	self.climbing = true
+	self.platypus.gravity = 0
+	self.platypus.velocity.y = 0
+	self.platypus.up(60)
+end
+
+local function climb_down(self)
+	play_animation(self, ANIM_CLIMB)
+	self.climbing = true
+	self.platypus.gravity = 0
+	self.platypus.velocity.y = 0
+	self.platypus.down(80)
+end
+
 function update(self, dt)
 	local ground_contact = self.platypus.has_ground_contact()
 	if self.input_state[LEFT] then
-		self.platypus.left(ground_contact and 120 or 100)
+		self.platypus.left(get_horizontal_speed(self.climbing, ground_contact))
 		play_animation(self, ground_contact and ANIM_RUN or ANIM_JUMP)
 		sprite.set_hflip("#sprite", true)
 	elseif self.input_state[RIGHT] then
-		self.platypus.right(ground_contact and 120 or 100)
+		self.platypus.right(get_horizontal_speed(self.climbing, ground_contact))
 		play_animation(self, ground_contact and ANIM_RUN or ANIM_JUMP)
 		sprite.set_hflip("#sprite", false)
+	elseif self.input_state[UP] then
+		if self.ladder then
+			climb_up(self)
+		end
+	elseif self.input_state[DOWN] then
+		if self.ladder and not ground_contact then
+			climb_down(self)
+		end
 	else
 		self.platypus.abort_wall_slide()
-		play_animation(self, ground_contact and ANIM_IDLE or ANIM_JUMP)
+		if self.climbing then
+			play_animation(self, ANIM_CLIMB_IDLE)
+		else
+			play_animation(self, ground_contact and ANIM_IDLE or ANIM_JUMP)
+		end
 	end
 	self.platypus.update(dt)
 end
@@ -71,19 +113,14 @@ local function handle_action(self, action_id, action)
 		self.input_state[action_id] = nil
 	end
 
-	if action_id == hash("toggle_profile") then
-		if action.released then
-			msg.post("@system:", "toggle_profile")
-		end
-		return
-	end
-
 	if action_id == JUMP then
 		if action.pressed then
 			self.platypus.jump(300)
 		elseif action.released then
 			self.platypus.abort_jump()
 		end
+	elseif action_id == TOGGLE_PROFILE and action.released then
+		msg.post("@system:", "toggle_profile")
 	elseif action_id == TOGGLE_DEBUG and action.released then
 		self.platypus.toggle_debug()
 		msg.post("@system:", "toggle_physics_debug")
@@ -108,6 +145,16 @@ function on_message(self, message_id, message, sender)
 			handle_action(self, RIGHT, message)
 		elseif message.id == hash("jump") then
 			handle_action(self, JUMP, message)
+		end
+	elseif message_id == hash("trigger_response") then
+		if message.other_group == hash("ladder") then
+			if message.enter then
+				self.ladder = true
+			else
+				self.platypus.gravity = -800
+				self.ladder = false
+				self.climbing = false
+			end
 		end
 	end
 end

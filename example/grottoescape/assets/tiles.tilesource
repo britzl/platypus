@@ -228,12 +228,12 @@ convex_hulls {
 convex_hulls {
   index: 176
   count: 4
-  collision_group: ""
+  collision_group: "ladder"
 }
 convex_hulls {
   index: 180
   count: 4
-  collision_group: ""
+  collision_group: "ladder"
 }
 convex_hulls {
   index: 184
@@ -326,7 +326,9 @@ convex_hulls {
   collision_group: ""
 }
 collision_groups: "ground"
+collision_groups: "ladder"
 collision_groups: "onewaydoor"
 collision_groups: "onewayplatform"
 extrude_borders: 2
 inner_padding: 0
+sprite_trim_mode: SPRITE_TRIM_MODE_OFF

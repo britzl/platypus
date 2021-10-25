@@ -363,7 +363,7 @@ function M.create(config)
 
 				if id == RAY_CAST_DOWN_ID or id == RAY_CAST_DOWN_LEFT_ID or id == RAY_CAST_DOWN_RIGHT_ID then
 					local collide_down = check_group_direction(result.group, M.DIR_DOWN)
-					if collide_down and result.normal.y > 0.7 and platypus.velocity.y < 0 and result.fraction < 1 then
+					if collide_down and result.normal.y > 0.7 and platypus.velocity.y <= 0 and result.fraction < 1 then
 						if not state.ground_contact then
 							state.ground_contact = true
 							-- change parent if needed

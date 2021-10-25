@@ -26,6 +26,10 @@ key_trigger {
   input: KEY_DOWN
   action: "down"
 }
+key_trigger {
+  input: KEY_UP
+  action: "up"
+}
 mouse_trigger {
   input: MOUSE_BUTTON_LEFT
   action: "touch"

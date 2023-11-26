@@ -3,6 +3,7 @@ title = Platypus
 version = 0
 dependencies#0 = https://github.com/britzl/defold-orthographic/archive/master.zip
 dependencies#1 = https://github.com/britzl/defold-input/archive/2.8.3.zip
+dependencies#2 = https://github.com/defold/lua-language-server/releases/download/v0.0.5/release.zip
 
 [bootstrap]
 main_collection = /example/loader.collectionc

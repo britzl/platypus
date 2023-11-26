@@ -1,12 +1,11 @@
 local PROXIES = {
 	[hash("load_grotto")] = "#grotto_escape",
-	[hash("load_raycasts")] = "#variable_raycasts",
 	[hash("load_menu")] = "#menu",
 }
 
 function init(self)
 	msg.post(".", "acquire_input_focus")
-	msg.post("#", "load_menu")
+	msg.post("#", "load_grotto")
 	self.current = nil
 end
 

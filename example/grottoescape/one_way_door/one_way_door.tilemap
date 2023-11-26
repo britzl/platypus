@@ -1,4 +1,4 @@
-tile_set: "/example/grottoescape/assets/tiles.tilesource"
+tile_set: "/example/assets/tiles.tilesource"
 layers {
   id: "layer1"
   z: 0.0
@@ -9,6 +9,7 @@ layers {
     tile: 46
     h_flip: 0
     v_flip: 0
+    rotate90: 0
   }
   cell {
     x: 0
@@ -16,6 +17,7 @@ layers {
     tile: 46
     h_flip: 0
     v_flip: 0
+    rotate90: 0
   }
 }
 material: "/builtins/materials/tile_map.material"

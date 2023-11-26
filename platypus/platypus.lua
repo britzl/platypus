@@ -2,8 +2,6 @@
 
 local M = {}
 
-local CONTACT_POINT_RESPONSE = hash("contact_point_response")
-
 local RAY_COLOR_HIT = vmath.vector4(0.5, 0.9, 1, 1)
 local RAY_COLOR_MISS = vmath.vector4(1.0, 0.5, 0, 1)
 
@@ -114,9 +112,6 @@ function M.create(config)
 		collision_groups_list[#collision_groups_list + 1] = id
 	end
 
-	-- collision shape correction vector
-	local correction = vmath.vector3()
-
 	local state = {
 		wall_contact = false,
 		wall_jump = false,
@@ -140,7 +135,7 @@ function M.create(config)
 	local RAY_CAST_DOWN_ID = 6
 	local RAY_CAST_DOWN_LEFT_ID = 7
 	local RAY_CAST_DOWN_RIGHT_ID = 8
- 
+
 	local RAYS = {}
 
 	-- Change the rays and bounds for collision detection
@@ -150,7 +145,7 @@ function M.create(config)
 		BOUNDS_TOP = vmath.vector3(0, collisions.top, 0)
 		BOUNDS_LEFT = vmath.vector3(-collisions.left, 0, 0)
 		BOUNDS_RIGHT = vmath.vector3(collisions.right, 0, 0)
-	
+
 		local RAY_CAST_LEFT = BOUNDS_LEFT + vmath.vector3(-1, 0, 0)
 		local RAY_CAST_RIGHT = BOUNDS_RIGHT + vmath.vector3(1, 0, 0)
 		local RAY_CAST_DOWN = BOUNDS_BOTTOM + vmath.vector3(0, -1, 0)
@@ -159,6 +154,10 @@ function M.create(config)
 		local RAY_CAST_DOWN_RIGHT = RAY_CAST_RIGHT + RAY_CAST_DOWN
 		local RAY_CAST_UP_LEFT = RAY_CAST_UP + RAY_CAST_LEFT
 		local RAY_CAST_UP_RIGHT = RAY_CAST_UP + RAY_CAST_RIGHT
+
+		-- it is useful if the up ray is one pixel longer since it will facilitate
+		-- for crouch mechanics and avoiding standing up while in a narrow spot
+		RAY_CAST_UP.y = RAY_CAST_UP.y + 1
 
 		-- order of ray casts is important!
 		-- we need to check for wall contact before checking ground
@@ -325,6 +324,12 @@ function M.create(config)
 		return state.ground_contact
 	end
 
+	--- Check if this object has contact with the ceiling
+	-- @return true if ceiling contact
+	function platypus.has_ceiling_contact()
+		return state.ceiling_contact
+	end
+
 	--- Check if this object has contact with a wall
 	-- @return true if wall contact
 	function platypus.has_wall_contact()
@@ -352,6 +357,7 @@ function M.create(config)
 		local previous_wall_contact = state.wall_contact
 		state.wall_contact = nil
 		state.ground_contact = false
+		state.ceiling_contact = false
 		for id, ray in ipairs(RAYS) do
 			--local ray = r.ray
 			--local id = r.id
@@ -387,11 +393,11 @@ function M.create(config)
 						separation.x = 0
 						separation.y = 0
 					end
-					
 				elseif id == RAY_CAST_UP_ID or id == RAY_CAST_UP_LEFT_ID or id == RAY_CAST_UP_RIGHT_ID then
 					local collide_up = check_group_direction(result.group, M.DIR_UP)
 					if collide_up and result.normal.y < -0.7 then
 						platypus.velocity.y = 0
+						state.ceiling_contact = true
 					elseif collide_up and result.normal.x ~= 0 then
 						-- up-left or up hit a wall
 						-- if we don't have proper wall contact we separate to
@@ -505,7 +511,6 @@ function M.create(config)
 		-- reset transient state
 		movement.x = 0
 		movement.y = 0
-		correction = vmath.vector3()
 	end
 
 	--- Forward any on_message calls here to resolve physics collisions

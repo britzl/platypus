@@ -10,15 +10,31 @@ local TOGGLE_PROFILE = hash("toggle_profile")
 
 local ANIM_RUN = hash("run")
 local ANIM_JUMP = hash("jump")
+local ANIM_FALL = hash("fall")
 local ANIM_IDLE = hash("idle")
 local ANIM_CLIMB = hash("climb")
 local ANIM_CLIMB_IDLE = hash("climb_idle")
+local ANIM_CROUCH = hash("crouch")
+local ANIM_CROUCH_IDLE = hash("crouch_idle")
+
+local DEFAULT_COLLISIONS = { left = 4, right = 4, top = 6, bottom = 6 }
+
+local COLLISIONS = {
+	[ANIM_RUN] = DEFAULT_COLLISIONS,
+	[ANIM_JUMP] = DEFAULT_COLLISIONS,
+	[ANIM_IDLE] = DEFAULT_COLLISIONS,
+	[ANIM_CLIMB] = DEFAULT_COLLISIONS,
+	[ANIM_CLIMB_IDLE] = DEFAULT_COLLISIONS,
+	[ANIM_CROUCH] = { left = 4, right = 4, top = 1, bottom = 6 },
+	[ANIM_CROUCH_IDLE] = { left = 4, right = 4, top = 1, bottom = 6 },
+}
 
 
 local function play_animation(self, animation)
 	if self.current_animation ~= animation then
-		msg.post("#sprite", "play_animation", { id = animation })
+		sprite.play_flipbook("#sprite", animation)
 		self.current_animation = animation
+		self.platypus.set_collisions(COLLISIONS[animation] or DEFAULT_COLLISIONS)
 	end
 end
 
@@ -49,13 +65,27 @@ function init(self)
 	msg.post("@render:", "clear_color", { color = vmath.vector4(0.008, 0.090, 0.129, 1.0) })
 end
 
-local function get_horizontal_speed(climbing, ground_contact)
-	if climbing then
+local function get_horizontal_speed(self)
+	if self.climbing then
 		return 50
-	elseif ground_contact then
-		return 120
-	else
+	elseif self.crouching then
+		return 25
+	elseif self.platypus.has_ground_contact() then
 		return 100
+	else
+		return 80
+	end
+end
+
+local function get_horizontal_animation(self)
+	if self.climbing then
+		return ANIM_CLIMB
+	elseif self.crouching then
+		return ANIM_CROUCH
+	elseif self.platypus.has_ground_contact() then
+		return ANIM_RUN
+	else
+		return ANIM_FALL
 	end
 end
 
@@ -75,30 +105,66 @@ local function climb_down(self)
 	self.platypus.down(80)
 end
 
+local function crouch(self)
+	play_animation(self, ANIM_CROUCH_IDLE)
+	self.crouching = true
+end
+
+local function fall(self)
+	play_animation(self, ANIM_RUN)
+	self.crouching = false
+end
+
+local function move_left(self)
+	self.platypus.left(get_horizontal_speed(self))
+	play_animation(self, get_horizontal_animation(self))
+	sprite.set_hflip("#sprite", true)
+end
+
+local function move_right(self)
+	self.platypus.right(get_horizontal_speed(self))
+	play_animation(self, get_horizontal_animation(self))
+	sprite.set_hflip("#sprite", false)
+end
+
 function update(self, dt)
 	local ground_contact = self.platypus.has_ground_contact()
-	if self.input_state[LEFT] then
-		self.platypus.left(get_horizontal_speed(self.climbing, ground_contact))
-		play_animation(self, ground_contact and ANIM_RUN or ANIM_JUMP)
-		sprite.set_hflip("#sprite", true)
-	elseif self.input_state[RIGHT] then
-		self.platypus.right(get_horizontal_speed(self.climbing, ground_contact))
-		play_animation(self, ground_contact and ANIM_RUN or ANIM_JUMP)
-		sprite.set_hflip("#sprite", false)
-	elseif self.input_state[UP] then
-		if self.ladder then
+	local ceiling_contact = self.platypus.has_ceiling_contact()
+	local updown = self.input_state[UP] or self.input_state[DOWN]
+	local leftright = self.input_state[LEFT] or self.input_state[RIGHT]
+	local idle = not (updown or leftright)
+	if self.input_state[UP] then
+		if self.ladder_contact then
 			climb_up(self)
 		end
 	elseif self.input_state[DOWN] then
-		if self.ladder and not ground_contact then
+		if not ground_contact and self.ladder_contact then
 			climb_down(self)
+		elseif ground_contact and (not self.crouching or not leftright) then
+			crouch(self)
 		end
+	elseif ground_contact and ceiling_contact then
+		crouch(self)
 	else
+		self.crouching = false
+	end
+
+	if self.input_state[LEFT] then
+		move_left(self)
+	elseif self.input_state[RIGHT] then
+		move_right(self)
+	end
+
+	if idle then
 		self.platypus.abort_wall_slide()
 		if self.climbing then
 			play_animation(self, ANIM_CLIMB_IDLE)
+		elseif self.crouching then
+			play_animation(self, ANIM_CROUCH_IDLE)
+		elseif ground_contact then
+			play_animation(self, ANIM_IDLE)
 		else
-			play_animation(self, ground_contact and ANIM_IDLE or ANIM_JUMP)
+			play_animation(self, ANIM_JUMP)
 		end
 	end
 	self.platypus.update(dt)
@@ -135,7 +201,7 @@ function on_message(self, message_id, message, sender)
 	elseif message_id == platypus.WALL_CONTACT then
 		print("Wall contact")
 	elseif message_id == platypus.FALLING then
-		print("Falling")
+		fall(self)
 	elseif message_id == platypus.WALL_JUMP then
 		sprite.set_hflip("#sprite", self.platypus.velocity.x < 0)
 	elseif message_id == hash("onscreen") then
@@ -149,10 +215,10 @@ function on_message(self, message_id, message, sender)
 	elseif message_id == hash("trigger_response") then
 		if message.other_group == hash("ladder") then
 			if message.enter then
-				self.ladder = true
+				self.ladder_contact = true
 			else
 				self.platypus.gravity = -800
-				self.ladder = false
+				self.ladder_contact = false
 				self.climbing = false
 			end
 		end
@@ -161,9 +227,4 @@ end
 
 function on_input(self, action_id, action)
 	handle_action(self, action_id, action)
-end
-
-function on_reload(self)
-    -- Add reload-handling code here
-    -- Remove this function if not needed
 end

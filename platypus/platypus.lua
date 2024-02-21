@@ -465,6 +465,10 @@ function M.create(config)
 	-- @param dt
 	function platypus.update(dt)
 		assert(dt, "You must provide a delta time")
+		-- ignore high delta time values (that may appear when window focus is lost)
+		if (dt > 0.1) then
+			dt = 0.016 -- assuming 60 FPS
+		end
 
 		-- was the ground we're standing on removed?
 		if config.reparent and state.parent_id then
